@@ -538,4 +538,184 @@ export default function App() {
                       {productos.map(p => (
                         <div key={p.id} className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
                           <p className="font-bold text-slate-100">{p.nombre}</p>
-                          <p className="text-xs text-amber-
+                          <p className="text-xs text-amber-400 font-semibold">Precio: ${p.precio.toLocaleString()} COP</p>
+                          <p className="text-xs text-slate-400">Stock Bodega: <span className="text-slate-200 font-bold">{p.stockBodega} und</span></p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sub-vista: Registro de Ventas */}
+                {pcSubTab === 'ventaspc' && (
+                  <div className="bg-slate-900 p-5 rounded-xl border border-slate-800">
+                    <h3 className="text-sm font-bold text-amber-400 mb-4">Historial Consolidado de Ventas Registradas</h3>
+                    {ventas.length === 0 ? (
+                      <p className="text-xs text-slate-400 py-8 text-center">No hay ventas registradas todavía.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-slate-300">
+                          <thead className="bg-slate-950 text-slate-400">
+                            <tr>
+                              <th className="p-2">ID Venta</th>
+                              <th className="p-2">Hora</th>
+                              <th className="p-2">Producto</th>
+                              <th className="p-2">Cantidad</th>
+                              <th className="p-2">Total</th>
+                              <th className="p-2">Pago</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-800">
+                            {ventas.map(v => (
+                              <tr key={v.id}>
+                                <td className="p-2 font-mono text-[10px] text-amber-400">{v.id}</td>
+                                <td className="p-2">{v.fecha}</td>
+                                <td className="p-2 font-medium">{v.prodNombre}</td>
+                                <td className="p-2">{v.cantidad} und</td>
+                                <td className="p-2 text-emerald-400 font-bold">${v.total.toLocaleString()} COP</td>
+                                <td className="p-2">{v.metodo}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Sub-vista: Reportes Excel */}
+                {pcSubTab === 'cierres' && (
+                  <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 text-center py-10 space-y-4">
+                    <FileSpreadsheet className="w-12 h-12 text-emerald-500 mx-auto" />
+                    <h3 className="text-lg font-bold text-slate-200">Consolidación de Reportes</h3>
+                    <p className="text-xs text-slate-400 max-w-lg mx-auto">
+                      Exporta todas las ventas, inventarios y estados de clientes en un formato organizado para Microsoft Excel.
+                    </p>
+                    <button onClick={exportarExcelCompleto} className="bg-emerald-600 hover:bg-emerald-500 px-8 py-3 rounded-lg text-sm font-bold shadow-lg transition-all inline-flex items-center gap-2">
+                      <FileSpreadsheet className="w-5 h-5" /> Descargar Consolidado (.XLSX)
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* MÓVIL VENDEDOR EN CALLE */
+          <div className="max-w-md mx-auto bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-2xl space-y-5">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h2 className="text-md font-bold text-emerald-400 flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5" /> Registrar Venta en Calle
+              </h2>
+              <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-full font-semibold">Repartidor</span>
+            </div>
+
+            <div>
+              <label className="text-xs text-slate-400 mb-1 block">Seleccionar Punto de Venta</label>
+              <select 
+                value={clienteSel} 
+                onChange={e => setClienteSel(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
+              >
+                <option value="">-- Seleccionar Tienda --</option>
+                {clientes.map(c => (
+                  <option key={c.id} value={c.id} disabled={c.estado !== 'Pendiente' && !c.revisita}>
+                    {c.nombre} ({c.estado}) {c.revisita ? ' - [RE-VISITA]' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {clienteSel && (
+              <div className="bg-slate-950 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
+                <span className="text-xs text-slate-400">Ir al local vía GPS</span>
+                <a 
+                  href={`https://www.google.com/maps/search/?api=1&query=${clientes.find(c => c.id === clienteSel)?.lat},${clientes.find(c => c.id === clienteSel)?.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-sky-600 hover:bg-sky-500 text-white text-xs px-3 py-1.5 rounded-md flex items-center gap-1 font-semibold"
+                >
+                  <MapPin className="w-3.5 h-3.5" /> Google Maps
+                </a>
+              </div>
+            )}
+
+            <div className="space-y-3 pt-2">
+              <div>
+                <label className="text-xs text-slate-400 mb-1 block">Producto a Entregar</label>
+                <select 
+                  value={prodSel} 
+                  onChange={e => setProdSel(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
+                >
+                  {productos.map(p => (
+                    <option key={p.id} value={p.id}>{p.nombre} - ${p.precio.toLocaleString()} COP</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Cantidad</label>
+                  <input 
+                    type="number" 
+                    min="1" 
+                    value={cantSel} 
+                    onChange={e => setCantSel(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">Método de Pago</label>
+                  <select 
+                    value={metodoPago} 
+                    onChange={e => setMetodoPago(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
+                  >
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Nequi">Nequi</option>
+                    <option value="DaviPlata">DaviPlata</option>
+                    <option value="Crédito">Crédito</option>
+                  </select>
+                </div>
+              </div>
+
+              <button 
+                onClick={registrarVenta} 
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg text-sm font-bold shadow-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <Send className="w-4 h-4" /> Confirmar & Registrar Venta
+              </button>
+            </div>
+
+            <div className="border-t border-slate-800 pt-4 space-y-2">
+              <label className="text-xs text-slate-400 block">¿No fue posible realizar la venta?</label>
+              <input 
+                type="text"
+                placeholder="Escribe el motivo (ej. Local cerrado)"
+                value={motivoNoVenta}
+                onChange={e => setMotivoNoVenta(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200"
+              />
+              <div className="flex gap-2">
+                <button 
+                  onClick={registrarNoVenta}
+                  className="flex-1 bg-amber-600/30 hover:bg-amber-600/50 text-amber-400 border border-amber-500/40 py-2 rounded-lg text-xs font-semibold"
+                >
+                  Registrar No Venta
+                </button>
+                {clienteSel && clientes.find(c => c.id === clienteSel)?.estado !== 'Pendiente' && (
+                  <button 
+                    onClick={() => solicitarRevisita(clienteSel)}
+                    className="flex-1 bg-sky-600/30 hover:bg-sky-600/50 text-sky-400 border border-sky-500/40 py-2 rounded-lg text-xs font-semibold"
+                  >
+                    Pedir Re-visita
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
