@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, MapPin, Truck, ShoppingCart, Database, FileSpreadsheet, 
-  Shield, Send, Plus, CheckCircle 
+  Shield, Send, Plus, CheckCircle, Package, DollarSign, Layers 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -9,12 +9,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('pc');
   const [pcSubTab, setPcSubTab] = useState('dashboard');
   
+  // Base de datos de clientes
   const [clientes, setClientes] = useState([
     { id: 'CLI-01', nombre: 'Estanco El Trébol', municipio: 'Palmar de Varela', direccion: 'Calle 8 # 5-20', lat: 10.7412, lng: -74.7541, estado: 'Pendiente', revisita: false },
     { id: 'CLI-02', nombre: 'Billares La Gran Parada', municipio: 'Palmar de Varela', direccion: 'Cra 4 # 10-15', lat: 10.7425, lng: -74.7550, estado: 'Pendiente', revisita: false },
     { id: 'CLI-03', nombre: 'Tienda La Central', municipio: 'Santo Tomás', direccion: 'Calle 12 # 8-04', lat: 10.7580, lng: -74.7610, estado: 'Pendiente', revisita: false }
   ]);
 
+  // Catálogo de productos Matondi
   const [productos] = useState([
     { id: 'PROD-01', nombre: 'Cerveza Dorada Especial 330ml', precio: 6500, stockBodega: 120 },
     { id: 'PROD-02', nombre: 'Cerveza Roja Mestiza 330ml', precio: 7000, stockBodega: 95 },
@@ -23,19 +25,24 @@ export default function App() {
     { id: 'PROD-05', nombre: 'Avena Casera Cremosa 1L', precio: 7500, stockBodega: 90 }
   ]);
 
+  // Inventario en vehículo
   const [cargues, setCargues] = useState([
     { id: 'CARG-01', prodId: 'PROD-01', cargado: 48, actual: 48 },
     { id: 'CARG-02', prodId: 'PROD-04', cargado: 24, actual: 24 },
     { id: 'CARG-03', prodId: 'PROD-05', cargado: 24, actual: 24 }
   ]);
 
+  // Historial de ventas
   const [ventas, setVentas] = useState([]);
 
+  // Estados de formularios
   const [clienteSel, setClienteSel] = useState('');
   const [prodSel, setProdSel] = useState('PROD-01');
   const [cantSel, setCantSel] = useState(1);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [motivoNoVenta, setMotivoNoVenta] = useState('');
+  
+  // Registro de nuevo cliente desde PC
   const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', municipio: 'Palmar de Varela', direccion: '', lat: '', lng: '' });
 
   const sanitizeStr = (str) => String(str).replace(/[<>]/g, '');
@@ -46,7 +53,7 @@ export default function App() {
     const itemCargue = cargues.find(c => c.prodId === prodSel);
 
     if (!itemCargue || itemCargue.actual < cantSel) {
-      return alert('Inventario insuficiente en el vehículo');
+      return alert('Inventario insuficiente a bordo del vehículo');
     }
 
     const nuevaVenta = {
@@ -93,7 +100,7 @@ export default function App() {
     const cli = {
       id: `CLI-0${clientes.length + 1}`,
       nombre: sanitizeStr(nuevoCliente.nombre),
-      municipio: nuevoCliente.municipio,
+      municipio: sanitizeStr(nuevoCliente.municipio),
       direccion: sanitizeStr(nuevoCliente.direccion),
       lat: Number(nuevoCliente.lat) || 10.7412,
       lng: Number(nuevoCliente.lng) || -74.7541,
@@ -109,12 +116,13 @@ export default function App() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ventas), 'Ventas');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(clientes), 'Clientes');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cargues), 'Inventario Cargado');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cargues), 'Inventario');
     XLSX.writeFile(wb, `Matondi_Beer_Reporte_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4">
+      {/* Encabezado General */}
       <header className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center bg-slate-900 border border-amber-900/40 p-4 rounded-xl mb-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-4 md:mb-0">
           <div className="bg-amber-600/20 p-2.5 rounded-xl border border-amber-500/30">
@@ -145,10 +153,13 @@ export default function App() {
       <main className="max-w-7xl mx-auto">
         {activeTab === 'pc' ? (
           <div className="space-y-6">
+            {/* Sub-pestañas de Administración */}
             <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-3">
               {[
                 { id: 'dashboard', label: 'Resumen & Stock', icon: Shield },
                 { id: 'clientes', label: 'Directorio Clientes', icon: Users },
+                { id: 'productos', label: 'Catálogo Productos', icon: Package },
+                { id: 'ventaspc', label: 'Registro de Ventas', icon: DollarSign },
                 { id: 'cierres', label: 'Reportes Excel', icon: FileSpreadsheet }
               ].map(sub => {
                 const Icon = sub.icon;
@@ -164,6 +175,7 @@ export default function App() {
               })}
             </div>
 
+            {/* Sub-vista 1: Resumen & Stock */}
             {pcSubTab === 'dashboard' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
@@ -236,6 +248,7 @@ export default function App() {
               </div>
             )}
 
+            {/* Sub-vista 2: Directorio de Clientes */}
             {pcSubTab === 'clientes' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-3">
@@ -325,6 +338,60 @@ export default function App() {
               </div>
             )}
 
+            {/* Sub-vista 3: Catálogo de Productos */}
+            {pcSubTab === 'productos' && (
+              <div className="bg-slate-900 p-5 rounded-xl border border-slate-800">
+                <h3 className="text-sm font-bold text-amber-400 mb-4">Catálogo y Stock en Bodega</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {productos.map(p => (
+                    <div key={p.id} className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+                      <p className="font-bold text-slate-100">{p.nombre}</p>
+                      <p className="text-xs text-amber-400 font-semibold">Precio: ${p.precio.toLocaleString()} COP</p>
+                      <p className="text-xs text-slate-400">Stock Bodega: <span className="text-slate-200 font-bold">{p.stockBodega} und</span></p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sub-vista 4: Registro de Ventas */}
+            {pcSubTab === 'ventaspc' && (
+              <div className="bg-slate-900 p-5 rounded-xl border border-slate-800">
+                <h3 className="text-sm font-bold text-amber-400 mb-4">Historial Consolidado de Ventas Registradas</h3>
+                {ventas.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-8 text-center">No hay ventas registradas todavía en la sesión actual.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-300">
+                      <thead className="bg-slate-950 text-slate-400">
+                        <tr>
+                          <th className="p-2">ID Venta</th>
+                          <th className="p-2">Hora</th>
+                          <th className="p-2">Producto</th>
+                          <th className="p-2">Cantidad</th>
+                          <th className="p-2">Total</th>
+                          <th className="p-2">Pago</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800">
+                        {ventas.map(v => (
+                          <tr key={v.id}>
+                            <td className="p-2 font-mono text-[10px] text-amber-400">{v.id}</td>
+                            <td className="p-2">{v.fecha}</td>
+                            <td className="p-2 font-medium">{v.prodNombre}</td>
+                            <td className="p-2">{v.cantidad} und</td>
+                            <td className="p-2 text-emerald-400 font-bold">${v.total.toLocaleString()} COP</td>
+                            <td className="p-2">{v.metodo}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Sub-vista 5: Reportes Excel */}
             {pcSubTab === 'cierres' && (
               <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 text-center py-10 space-y-4">
                 <FileSpreadsheet className="w-12 h-12 text-emerald-500 mx-auto" />
@@ -394,7 +461,7 @@ export default function App() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Cantidad</label>
+                  <label className="text-xs text-slate-400 block mb-1">Cantidad</label>
                   <input 
                     type="number" 
                     min="1" 
@@ -458,3 +525,5 @@ export default function App() {
     </div>
   );
 }
+
+    
