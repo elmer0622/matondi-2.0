@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, MapPin, Truck, ShoppingCart, Database, FileSpreadsheet, 
-  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History 
+  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -29,13 +29,13 @@ export default function App() {
   ]);
   const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', rol: 'Repartidor', vehiculo: '' });
 
-  // Módulo de Creación de Rutas (Ciudad, Departamento, Municipio, Google Maps)
+  // Módulo de Creación de Rutas
   const [rutas, setRutas] = useState([
     { id: 'RUT-01', nombre: 'Ruta Atlántico Centro', ciudad: 'Barranquilla', departamento: 'Atlántico', municipio: 'Palmar de Varela', googleMaps: 'https://maps.google.com/?q=10.7412,-74.7541' }
   ]);
   const [nuevaRuta, setNuevaRuta] = useState({ nombre: '', ciudad: 'Barranquilla', departamento: 'Atlántico', municipio: '', googleMaps: '' });
 
-  // Directorio de Clientes (El municipio se asigna aquí y se hereda)
+  // Directorio de Clientes
   const [clientes, setClientes] = useState([
     { id: 'CLI-01', nombre: 'Estanco El Trébol', zona: 'Zona Norte', municipio: 'Palmar de Varela', direccion: 'Calle 8 # 5-20', lat: 10.7412, lng: -74.7541, estado: 'Pendiente', revisita: false }
   ]);
@@ -51,7 +51,7 @@ export default function App() {
   ]);
   const [nuevoProd, setNuevoProd] = useState({ nombre: '', precio: '' });
 
-  // Asignación de Cargues del Día por Ruta (Inventario Individual por Repartidor)
+  // Asignación de Cargues del Día por Ruta (con productos dinámicos)
   const [carguesDiarios, setCarguesDiarios] = useState([]);
   const [cargueForm, setCargueForm] = useState({
     repartidorId: 'USR-02',
@@ -208,7 +208,33 @@ export default function App() {
     alert('Producto agregado al catálogo con éxito');
   };
 
-  // Cargue Diario asignado por RUTA (Toma el municipio configurado en la ruta seleccionada)
+  // Funciones para administrar los ítems del formulario de cargue diario
+  const agregarItemCargueForm = () => {
+    setCargueForm({
+      ...cargueForm,
+      items: [...cargueForm.items, { prodId: productos[0]?.id || '', cantidad: 10, precioUnitario: productos[0]?.precio || 5000 }]
+    });
+  };
+
+  const actualizarItemCargueForm = (index, campo, valor) => {
+    const nuevosItems = [...cargueForm.items];
+    if (campo === 'prodId') {
+      const prodSelObj = productos.find(p => p.id === valor);
+      nuevosItems[index].prodId = valor;
+      if (prodSelObj) {
+        nuevosItems[index].precioUnitario = prodSelObj.precio;
+      }
+    } else {
+      nuevosItems[index][campo] = valor;
+    }
+    setCargueForm({ ...cargueForm, items: nuevosItems });
+  };
+
+  const eliminarItemCargueForm = (index) => {
+    const nuevosItems = cargueForm.items.filter((_, i) => i !== index);
+    setCargueForm({ ...cargueForm, items: nuevosItems });
+  };
+
   const registrarCargueDia = () => {
     const rep = usuariosSistema.find(u => u.id === cargueForm.repartidorId);
     if (!rep) return alert('Selecciona un repartidor válido');
@@ -216,13 +242,15 @@ export default function App() {
     const rutaObj = rutas.find(r => r.nombre === cargueForm.rutaNombre);
     if (!rutaObj) return alert('Selecciona una ruta válida');
 
+    if (cargueForm.items.length === 0) return alert('Agrega al menos un producto al cargue del vehículo.');
+
     const nuevoCargueRegistro = {
       id: `CARG-${Date.now()}`,
       fecha: new Date().toLocaleDateString(),
       repartidorId: cargueForm.repartidorId,
       repartidorNombre: rep.nombre,
       rutaNombre: rutaObj.nombre,
-      municipio: rutaObj.municipio, // Información tomada de la ruta/cliente
+      municipio: rutaObj.municipio,
       combustible: Number(cargueForm.combustible) || 0,
       dineroBase: Number(cargueForm.dineroBase) || 0,
       items: cargueForm.items.map(item => {
@@ -259,7 +287,7 @@ export default function App() {
       clienteId: clienteSel,
       clienteNombre: cli ? cli.nombre : 'Cliente',
       ruta: cargueActivo.rutaNombre,
-      municipio: cli ? cli.municipio : cargueActivo.municipio, // Tomado del campo del cliente
+      municipio: cli ? cli.municipio : cargueActivo.municipio,
       zona: cli ? cli.zona : 'Zona General',
       vendedorId: repId,
       vendedorNombre: mobileUser ? mobileUser.nombre : 'Repartidor',
@@ -275,7 +303,6 @@ export default function App() {
 
     setVentas([...ventas, nuevaVenta]);
 
-    // Descontar del inventario individual despachado del repartidor
     setCarguesDiarios(carguesDiarios.map(c => {
       if (c.id === cargueActivo.id) {
         return {
@@ -297,7 +324,6 @@ export default function App() {
     alert('Visita sin venta registrada');
   };
 
-  // Cierre General: Deja el inventario despachado en blanco (cero) y archiva informes
   const ejecutarCierreGeneral = () => {
     if (ventas.length === 0 && carguesDiarios.length === 0) return alert('No hay actividad activa para cerrar.');
     
@@ -473,7 +499,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* GESTIÓN DE RUTAS (Muestra todos los campos solicitados) */}
+                {/* GESTIÓN DE RUTAS */}
                 {pcSubTab === 'rutas' && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
@@ -514,12 +540,12 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CARGUE DIARIO (Asignación general a ruta por repartidor) */}
+                {/* CARGUE DIARIO (Asignación por ruta + adición dinámica de productos cargados) */}
                 {pcSubTab === 'cargueview' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
                       <h3 className="text-sm font-bold text-amber-400 flex items-center gap-2">
-                        <ClipboardList className="w-4 h-4" /> Asignar Cargue General a Ruta
+                        <ClipboardList className="w-4 h-4" /> Asignar Cargue a Ruta
                       </h3>
                       <div>
                         <label className="text-xs text-slate-400 block mb-1">Repartidor Asignado</label>
@@ -567,7 +593,59 @@ export default function App() {
                         </div>
                       </div>
 
-                      <button onClick={registrarCargueDia} className="w-full bg-amber-600 hover:bg-amber-500 py-2.5 rounded text-xs font-bold text-white">
+                      {/* Sección para agregar productos cargados al vehículo */}
+                      <div className="border-t border-slate-800 pt-3 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <label className="text-xs font-bold text-amber-300">Productos Cargados al Vehículo</label>
+                          <button onClick={agregarItemCargueForm} className="text-[10px] bg-amber-600/30 text-amber-400 border border-amber-500/40 px-2 py-1 rounded font-semibold hover:bg-amber-600/50">
+                            + Agregar Producto
+                          </button>
+                        </div>
+
+                        {cargueForm.items.map((item, idx) => (
+                          <div key={idx} className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2 relative">
+                            <div className="flex justify-between items-center">
+                              <select 
+                                value={item.prodId}
+                                onChange={e => actualizarItemCargueForm(idx, 'prodId', e.target.value)}
+                                className="w-[85%] bg-slate-900 border border-slate-800 rounded p-1.5 text-xs text-slate-200"
+                              >
+                                {productos.map(p => (
+                                  <option key={p.id} value={p.id}>{p.nombre}</option>
+                                ))}
+                              </select>
+                              {cargueForm.items.length > 1 && (
+                                <button onClick={() => eliminarItemCargueForm(idx)} className="text-red-400 hover:text-red-300 p-1">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] text-slate-400">Cantidad</label>
+                                <input 
+                                  type="number" 
+                                  min="1" 
+                                  value={item.cantidad} 
+                                  onChange={e => actualizarItemCargueForm(idx, 'cantidad', e.target.value)}
+                                  className="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-xs text-slate-200" 
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-slate-400">Precio Unitario ($)</label>
+                                <input 
+                                  type="number" 
+                                  value={item.precioUnitario} 
+                                  onChange={e => actualizarItemCargueForm(idx, 'precioUnitario', e.target.value)}
+                                  className="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-xs text-slate-200" 
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button onClick={registrarCargueDia} className="w-full bg-amber-600 hover:bg-amber-500 py-2.5 rounded text-xs font-bold text-white shadow-lg">
                         Asignar Cargue a la Ruta
                       </button>
                     </div>
@@ -583,9 +661,9 @@ export default function App() {
                               <tr>
                                 <th className="p-3">Fecha</th>
                                 <th className="p-3">Repartidor</th>
-                                <th className="p-3">Ruta</th>
-                                <th className="p-3">Municipio (Ruta)</th>
+                                <th className="p-3">Ruta / Municipio</th>
                                 <th className="p-3">Combustible / Base</th>
+                                <th className="p-3">Productos Cargados</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800">
@@ -593,9 +671,15 @@ export default function App() {
                                 <tr key={c.id} className="hover:bg-slate-800/50">
                                   <td className="p-3 text-slate-400">{c.fecha}</td>
                                   <td className="p-3 font-medium text-amber-300">{c.repartidorNombre}</td>
-                                  <td className="p-3">{c.rutaNombre}</td>
-                                  <td className="p-3">{c.municipio}</td>
+                                  <td className="p-3">{c.rutaNombre} <span className="block text-[10px] text-slate-400">{c.municipio}</span></td>
                                   <td className="p-3 text-emerald-400">Comb: ${c.combustible.toLocaleString()}<br/>Base: ${c.dineroBase.toLocaleString()}</td>
+                                  <td className="p-3">
+                                    {c.items.map((it, idx) => (
+                                      <div key={idx} className="text-[11px]">
+                                        {it.prodNombre}: <strong className="text-amber-400">{it.cantidadActual} und</strong> (${it.precioUnitario.toLocaleString()})
+                                      </div>
+                                    ))}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -606,7 +690,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* INVENTARIO DESPACHADO (Stock individual por repartidor, queda en blanco al cerrar) */}
+                {/* INVENTARIO DESPACHADO */}
                 {pcSubTab === 'inventariodespachado' && (
                   <div className="space-y-4">
                     <h3 className="text-sm font-bold text-amber-400">Inventario Actual Despachado por Repartidor</h3>
@@ -775,7 +859,7 @@ export default function App() {
             )}
           </div>
         ) : (
-          /* MÓVIL VENDEDOR EN CALLE (REQUIERE INICIO DE SESIÓN OBLIGATORIO) */
+          /* MÓVIL VENDEDOR EN CALLE */
           <div>
             {!isMobileLoggedIn ? (
               <div className="max-w-md mx-auto bg-slate-900 p-8 rounded-2xl border border-emerald-500/30 shadow-2xl space-y-5 my-12">
