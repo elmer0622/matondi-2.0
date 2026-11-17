@@ -51,7 +51,7 @@ export default function App() {
   ]);
   const [nuevoProd, setNuevoProd] = useState({ nombre: '', precio: '' });
 
-  // Asignación de Cargues del Día por Ruta (con productos dinámicos)
+  // Asignación de Cargues del Día por Ruta
   const [carguesDiarios, setCarguesDiarios] = useState([]);
   const [cargueForm, setCargueForm] = useState({
     repartidorId: 'USR-02',
@@ -65,9 +65,10 @@ export default function App() {
   const [ventas, setVentas] = useState([]);
   const [cierresHistoricos, setCierresHistoricos] = useState([]);
 
-  // Estados de formularios en Calle / PC
+  // Estados de formularios en Calle / Móvil
+  const [municipioSel, setMunicipioSel] = useState('');
   const [clienteSel, setClienteSel] = useState('');
-  const [prodSel, setProdSel] = useState('PROD-01');
+  const [prodSel, setProdSel] = useState('');
   const [cantSel, setCantSel] = useState(1);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [motivoNoVenta, setMotivoNoVenta] = useState('');
@@ -208,7 +209,6 @@ export default function App() {
     alert('Producto agregado al catálogo con éxito');
   };
 
-  // Funciones para administrar los ítems del formulario de cargue diario
   const agregarItemCargueForm = () => {
     setCargueForm({
       ...cargueForm,
@@ -270,16 +270,19 @@ export default function App() {
   };
 
   const registrarVenta = () => {
-    if (!clienteSel) return alert('Selecciona un cliente');
+    if (!municipioSel) return alert('Selecciona un municipio');
+    if (!clienteSel) return alert('Selecciona una tienda');
+    if (!prodSel) return alert('Selecciona un producto');
+
     const cli = clientes.find(c => c.id === clienteSel);
     const prod = productos.find(p => p.id === prodSel);
     const repId = mobileUser ? mobileUser.id : 'USR-02';
 
     const cargueActivo = carguesDiarios.find(c => c.repartidorId === repId);
-    if (!cargueActivo) return alert('No tienes un cargue de ruta asignado para hoy.');
+    if (!cargueActivo) return alert('No tienes un cargue de ruta asignado para hoy en este usuario.');
 
     const itemCargue = cargueActivo.items.find(i => i.prodId === prodSel);
-    if (!itemCargue || itemCargue.cantidadActual < cantSel) return alert('Inventario insuficiente en el vehículo.');
+    if (!itemCargue || itemCargue.cantidadActual < cantSel) return alert('Inventario insuficiente para este producto en tu vehículo.');
 
     const precioVenta = itemCargue.precioUnitario || prod.precio;
     const nuevaVenta = {
@@ -337,9 +340,9 @@ export default function App() {
 
     setCierresHistoricos([...cierresHistoricos, resumenCierre]);
     setVentas([]);
-    setCarguesDiarios([]); // Dejar inventario despachado en blanco
+    setCarguesDiarios([]);
 
-    alert('¡Cierre General ejecutado con éxito! El inventario despachado ha quedado en blanco y los informes han sido archivados.');
+    alert('¡Cierre General ejecutado con éxito! El inventario despachado ha quedado en blanco.');
   };
 
   const exportarExcelReporte = () => {
@@ -355,6 +358,11 @@ export default function App() {
     const matchZona = filtroZona ? v.zona.toLowerCase().includes(filtroZona.toLowerCase()) : true;
     return matchMun && matchRep && matchZona;
   });
+
+  // Filtrado de tiendas y productos para el Móvil según el cargue activo del repartidor logueado
+  const cargueMovilActivo = mobileUser ? carguesDiarios.find(c => c.repartidorId === mobileUser.id) : null;
+  const clientesFiltradosMovil = clientes.filter(c => municipioSel ? c.municipio.toLowerCase() === municipioSel.toLowerCase() : false);
+  const productosMovilDisponibles = cargueMovilActivo ? cargueMovilActivo.items.filter(i => i.cantidadActual > 0) : [];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 relative">
@@ -540,7 +548,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CARGUE DIARIO (Asignación por ruta + adición dinámica de productos cargados) */}
+                {/* CARGUE DIARIO */}
                 {pcSubTab === 'cargueview' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
@@ -593,7 +601,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Sección para agregar productos cargados al vehículo */}
                       <div className="border-t border-slate-800 pt-3 space-y-3">
                         <div className="flex justify-between items-center">
                           <label className="text-xs font-bold text-amber-300">Productos Cargados al Vehículo</label>
@@ -661,9 +668,9 @@ export default function App() {
                               <tr>
                                 <th className="p-3">Fecha</th>
                                 <th className="p-3">Repartidor</th>
-                                <th className="p-3">Ruta / Municipio</th>
+                                <th className="p-3">Ruta</th>
+                                <th className="p-3">Municipio</th>
                                 <th className="p-3">Combustible / Base</th>
-                                <th className="p-3">Productos Cargados</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800">
@@ -671,15 +678,9 @@ export default function App() {
                                 <tr key={c.id} className="hover:bg-slate-800/50">
                                   <td className="p-3 text-slate-400">{c.fecha}</td>
                                   <td className="p-3 font-medium text-amber-300">{c.repartidorNombre}</td>
-                                  <td className="p-3">{c.rutaNombre} <span className="block text-[10px] text-slate-400">{c.municipio}</span></td>
+                                  <td className="p-3">{c.rutaNombre}</td>
+                                  <td className="p-3">{c.municipio}</td>
                                   <td className="p-3 text-emerald-400">Comb: ${c.combustible.toLocaleString()}<br/>Base: ${c.dineroBase.toLocaleString()}</td>
-                                  <td className="p-3">
-                                    {c.items.map((it, idx) => (
-                                      <div key={idx} className="text-[11px]">
-                                        {it.prodNombre}: <strong className="text-amber-400">{it.cantidadActual} und</strong> (${it.precioUnitario.toLocaleString()})
-                                      </div>
-                                    ))}
-                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -775,7 +776,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CONSULTAS & REPORTES (Filtrables por vendedor y de manera general) */}
+                {/* CONSULTAS & REPORTES */}
                 {pcSubTab === 'consultas' && (
                   <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-5">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -859,7 +860,7 @@ export default function App() {
             )}
           </div>
         ) : (
-          /* MÓVIL VENDEDOR EN CALLE */
+          /* MÓVIL VENDEDOR EN CALLE (FILTRADO JERÁRQUICO POR MUNICIPIO Y PRODUCTOS DEL CARGUE) */
           <div>
             {!isMobileLoggedIn ? (
               <div className="max-w-md mx-auto bg-slate-900 p-8 rounded-2xl border border-emerald-500/30 shadow-2xl space-y-5 my-12">
@@ -887,6 +888,17 @@ export default function App() {
                   </button>
                 </form>
               </div>
+            ) : !cargueMovilActivo ? (
+              <div className="max-w-md mx-auto bg-slate-900 p-8 rounded-2xl border border-amber-500/30 text-center space-y-4 my-12">
+                <Shield className="w-12 h-12 text-amber-500 mx-auto" />
+                <h3 className="text-lg font-bold text-slate-200">Sin Reparto Asignado</h3>
+                <p className="text-xs text-slate-400">
+                  Hola <strong>{mobileUser?.nombre}</strong>, no tienes un cargue activo asignado para hoy por el Administrador.
+                </p>
+                <button onClick={cerrarSesionMovil} className="bg-slate-800 px-4 py-2 rounded text-xs text-amber-400 font-bold">
+                  Cerrar Sesión
+                </button>
+              </div>
             ) : (
               <div className="max-w-md mx-auto bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-2xl space-y-5">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -894,27 +906,58 @@ export default function App() {
                     <h2 className="text-md font-bold text-emerald-400 flex items-center gap-2">
                       <ShoppingCart className="w-5 h-5" /> Registrar Venta en Calle
                     </h2>
-                    <p className="text-[11px] text-amber-400">Usuario: {mobileUser?.nombre} ({mobileUser?.rol})</p>
+                    <p className="text-[11px] text-amber-400">Ruta: {cargueMovilActivo.rutaNombre}</p>
                   </div>
                   <button onClick={cerrarSesionMovil} className="text-[10px] bg-red-600/20 text-red-400 px-2 py-1 rounded">Salir</button>
                 </div>
 
+                {/* 1. SELECCIONAR MUNICIPIO */}
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">Seleccionar Punto de Venta</label>
-                  <select value={clienteSel} onChange={e => setClienteSel(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200">
+                  <label className="text-xs text-slate-400 mb-1 block">1. Seleccionar Municipio</label>
+                  <select 
+                    value={municipioSel} 
+                    onChange={e => {
+                      setMunicipioSel(e.target.value);
+                      setClienteSel(''); // Limpiar tienda al cambiar municipio
+                    }} 
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
+                  >
+                    <option value="">-- Seleccionar Municipio --</option>
+                    {Array.from(new Set(clientes.map(c => c.municipio))).map((mun, idx) => (
+                      <option key={idx} value={mun}>{mun}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 2. SELECCIONAR TIENDA (Filtro automático basado en el municipio elegido) */}
+                <div>
+                  <label className="text-xs text-slate-400 mb-1 block">2. Seleccionar Tienda (Cliente)</label>
+                  <select 
+                    value={clienteSel} 
+                    onChange={e => setClienteSel(e.target.value)} 
+                    disabled={!municipioSel}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200 disabled:opacity-50"
+                  >
                     <option value="">-- Seleccionar Tienda --</option>
-                    {clientes.map(c => (
-                      <option key={c.id} value={c.id}>{c.nombre} ({c.municipio})</option>
+                    {clientesFiltradosMovil.map(c => (
+                      <option key={c.id} value={c.id}>{c.nombre} ({c.direccion})</option>
                     ))}
                   </select>
                 </div>
 
                 <div className="space-y-3 pt-2">
                   <div>
-                    <label className="text-xs text-slate-400 block mb-1">Producto a Entregar</label>
-                    <select value={prodSel} onChange={e => setProdSel(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200">
-                      {productos.map(p => (
-                        <option key={p.id} value={p.id}>{p.nombre} - ${p.precio.toLocaleString()} COP</option>
+                    <label className="text-xs text-slate-400 mb-1 block">3. Producto Autorizado en tu Cargue</label>
+                    <select 
+                      value={prodSel} 
+                      onChange={e => setProdSel(e.target.value)} 
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
+                    >
+                      <option value="">-- Seleccionar Producto del Cargue --</option>
+                      {productosMovilDisponibles.map(item => (
+                        <option key={item.prodId} value={item.prodId}>
+                          {item.prodName} - Stock: {item.cantidadActual} und (${item.precioUnitario.toLocaleString()})
+                        </option>
                       ))}
                     </select>
                   </div>
