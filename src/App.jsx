@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, MapPin, Truck, ShoppingCart, Database, FileSpreadsheet, 
-  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X 
+  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -14,13 +14,13 @@ export default function App() {
   const [usuarioActual, setUsuarioActual] = useState(null);
   const [loginEmail, setLoginEmail] = useState('');
 
-  // Control de Autenticación Módulo Móvil (Ahora OBLIGATORIO antes de ver el despacho)
+  // Control de Autenticación Módulo Móvil
   const [isMobileLoggedIn, setIsMobileLoggedIn] = useState(false);
   const [mobileUser, setMobileUser] = useState(null);
   const [mobileEmail, setMobileEmail] = useState('');
 
   // Control de Ventanas Emergentes (Modales)
-  const [modalAbierto, setModalAbierto] = useState(null); // 'ruta', 'cliente', 'usuario', 'producto'
+  const [modalAbierto, setModalAbierto] = useState(null);
 
   // Base de datos de Usuarios
   const [usuariosSistema, setUsuariosSistema] = useState([
@@ -29,13 +29,13 @@ export default function App() {
   ]);
   const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', rol: 'Repartidor', vehiculo: '' });
 
-  // Módulo de Creación de Rutas
+  // Módulo de Creación de Rutas (Ciudad, Departamento, Municipio, Google Maps)
   const [rutas, setRutas] = useState([
-    { id: 'RUT-01', nombre: 'Ruta Centro Atlántico', ciudad: 'Barranquilla', departamento: 'Atlántico', municipio: 'Palmar de Varela', googleMaps: 'https://maps.google.com/?q=10.7412,-74.7541' }
+    { id: 'RUT-01', nombre: 'Ruta Atlántico Centro', ciudad: 'Barranquilla', departamento: 'Atlántico', municipio: 'Palmar de Varela', googleMaps: 'https://maps.google.com/?q=10.7412,-74.7541' }
   ]);
   const [nuevaRuta, setNuevaRuta] = useState({ nombre: '', ciudad: 'Barranquilla', departamento: 'Atlántico', municipio: '', googleMaps: '' });
 
-  // Directorio de Clientes
+  // Directorio de Clientes (El municipio se asigna aquí y se hereda)
   const [clientes, setClientes] = useState([
     { id: 'CLI-01', nombre: 'Estanco El Trébol', zona: 'Zona Norte', municipio: 'Palmar de Varela', direccion: 'Calle 8 # 5-20', lat: 10.7412, lng: -74.7541, estado: 'Pendiente', revisita: false }
   ]);
@@ -51,18 +51,17 @@ export default function App() {
   ]);
   const [nuevoProd, setNuevoProd] = useState({ nombre: '', precio: '' });
 
-  // Asignación de Cargues del Día
+  // Asignación de Cargues del Día por Ruta (Inventario Individual por Repartidor)
   const [carguesDiarios, setCarguesDiarios] = useState([]);
   const [cargueForm, setCargueForm] = useState({
     repartidorId: 'USR-02',
-    ruta: 'Ruta Atlántico Centro',
-    municipio: 'Palmar de Varela',
+    rutaNombre: 'Ruta Atlántico Centro',
     combustible: 25000,
     dineroBase: 50000,
     items: [{ prodId: 'PROD-01', cantidad: 40, precioUnitario: 6500 }]
   });
 
-  // Historial de Ventas y Cierres Históricos
+  // Historial de Ventas, Inventario Despachado y Cierres Históricos
   const [ventas, setVentas] = useState([]);
   const [cierresHistoricos, setCierresHistoricos] = useState([]);
 
@@ -191,7 +190,7 @@ export default function App() {
       revisita: false
     };
     setClientes([...clientes, cli]);
-    setNuevoCliente({ nombre: '', zona: 'Zona Norte', municipio: '', direccion: '', lat: '', lng: '' });
+    setNuevoCliente({ nombre: '', zona: 'Zona Norte', municipio: 'Palmar de Varela', direccion: '', lat: '', lng: '' });
     setModalAbierto(null);
     alert('Cliente creado exitosamente');
   };
@@ -209,17 +208,21 @@ export default function App() {
     alert('Producto agregado al catálogo con éxito');
   };
 
+  // Cargue Diario asignado por RUTA (Toma el municipio configurado en la ruta seleccionada)
   const registrarCargueDia = () => {
     const rep = usuariosSistema.find(u => u.id === cargueForm.repartidorId);
     if (!rep) return alert('Selecciona un repartidor válido');
+
+    const rutaObj = rutas.find(r => r.nombre === cargueForm.rutaNombre);
+    if (!rutaObj) return alert('Selecciona una ruta válida');
 
     const nuevoCargueRegistro = {
       id: `CARG-${Date.now()}`,
       fecha: new Date().toLocaleDateString(),
       repartidorId: cargueForm.repartidorId,
       repartidorNombre: rep.nombre,
-      ruta: sanitizeStr(cargueForm.ruta),
-      municipio: sanitizeStr(cargueForm.municipio),
+      rutaNombre: rutaObj.nombre,
+      municipio: rutaObj.municipio, // Información tomada de la ruta/cliente
       combustible: Number(cargueForm.combustible) || 0,
       dineroBase: Number(cargueForm.dineroBase) || 0,
       items: cargueForm.items.map(item => {
@@ -235,7 +238,7 @@ export default function App() {
     };
 
     setCarguesDiarios([...carguesDiarios, nuevoCargueRegistro]);
-    alert('¡Cargue diario asignado con éxito!');
+    alert('¡Cargue general a la ruta asignado con éxito!');
   };
 
   const registrarVenta = () => {
@@ -245,18 +248,18 @@ export default function App() {
     const repId = mobileUser ? mobileUser.id : 'USR-02';
 
     const cargueActivo = carguesDiarios.find(c => c.repartidorId === repId);
-    if (!cargueActivo) return alert('No tienes un cargue asignado para hoy en este usuario.');
+    if (!cargueActivo) return alert('No tienes un cargue de ruta asignado para hoy.');
 
     const itemCargue = cargueActivo.items.find(i => i.prodId === prodSel);
-    if (!itemCargue || itemCargue.cantidadActual < cantSel) return alert('Inventario insuficiente en ruta.');
+    if (!itemCargue || itemCargue.cantidadActual < cantSel) return alert('Inventario insuficiente en el vehículo.');
 
     const precioVenta = itemCargue.precioUnitario || prod.precio;
     const nuevaVenta = {
       id: `VEN-${Date.now()}`,
       clienteId: clienteSel,
       clienteNombre: cli ? cli.nombre : 'Cliente',
-      ruta: cargueActivo.ruta,
-      municipio: cli ? cli.municipio : cargueActivo.municipio,
+      ruta: cargueActivo.rutaNombre,
+      municipio: cli ? cli.municipio : cargueActivo.municipio, // Tomado del campo del cliente
       zona: cli ? cli.zona : 'Zona General',
       vendedorId: repId,
       vendedorNombre: mobileUser ? mobileUser.nombre : 'Repartidor',
@@ -271,6 +274,8 @@ export default function App() {
     };
 
     setVentas([...ventas, nuevaVenta]);
+
+    // Descontar del inventario individual despachado del repartidor
     setCarguesDiarios(carguesDiarios.map(c => {
       if (c.id === cargueActivo.id) {
         return {
@@ -292,24 +297,29 @@ export default function App() {
     alert('Visita sin venta registrada');
   };
 
-  const ejecutarCierreDia = () => {
-    if (ventas.length === 0) return alert('No hay ventas registradas para cerrar el día.');
+  // Cierre General: Deja el inventario despachado en blanco (cero) y archiva informes
+  const ejecutarCierreGeneral = () => {
+    if (ventas.length === 0 && carguesDiarios.length === 0) return alert('No hay actividad activa para cerrar.');
+    
     const resumenCierre = {
-      idCierre: `CIERRE-${new Date().toISOString().slice(0,10)}`,
+      idCierre: `CIERRE-GRAL-${new Date().toISOString().slice(0,10)}`,
       fecha: new Date().toLocaleDateString(),
-      totalVentasDia: ventas.reduce((acc, v) => acc + v.total, 0),
-      detalleVentas: [...ventas]
+      totalVentasGral: ventas.reduce((acc, v) => acc + v.total, 0),
+      detalleVentas: [...ventas],
+      carguesCerrados: [...carguesDiarios]
     };
+
     setCierresHistoricos([...cierresHistoricos, resumenCierre]);
     setVentas([]);
-    setCarguesDiarios([]);
-    alert('¡Cierre de día ejecutado con éxito!');
+    setCarguesDiarios([]); // Dejar inventario despachado en blanco
+
+    alert('¡Cierre General ejecutado con éxito! El inventario despachado ha quedado en blanco y los informes han sido archivados.');
   };
 
   const exportarExcelReporte = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ventas), 'Ventas Activas');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(clientes), 'Clientes');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cierresHistoricos), 'Historial Cierres');
     XLSX.writeFile(wb, `Matondi_Consolidado_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
@@ -393,17 +403,18 @@ export default function App() {
                       { id: 'usuarios', label: 'Gestión de Usuarios', icon: UserCheck },
                       { id: 'rutas', label: 'Gestión de Rutas', icon: Compass },
                       { id: 'cargueview', label: 'Cargue Diario', icon: ClipboardList },
+                      { id: 'inventariodespachado', label: 'Inventario Despachado', icon: Package },
                       { id: 'productos', label: 'Catálogo & Precios', icon: Package },
                       { id: 'clientes', label: 'Directorio Clientes', icon: Users },
                       { id: 'consultas', label: 'Consulta & Reportes', icon: BarChart3 },
-                      { id: 'cierre', label: 'Cierre de Día', icon: RotateCcw }
+                      { id: 'cierre', label: 'Cierre General', icon: RotateCcw }
                     ].map(sub => {
                       const Icon = sub.icon;
                       return (
                         <button
                           key={sub.id}
                           onClick={() => setPcSubTab(sub.id)}
-                          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${pcSubTab === sub.id ? 'bg-amber-600/20 text-amber-400 border border-amber-500/40' : 'bg-slate-900 text-slate-400 hover:text-slate-200'}`}
+                          className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${pcSubTab === sub.id ? 'bg-amber-600/20 text-amber-400 border border-amber-500/40' : 'bg-slate-900 text-slate-400 hover:text-slate-200'}`}
                         >
                           <Icon className="w-4 h-4" /> {sub.label}
                         </button>
@@ -462,7 +473,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* GESTIÓN DE RUTAS */}
+                {/* GESTIÓN DE RUTAS (Muestra todos los campos solicitados) */}
                 {pcSubTab === 'rutas' && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
@@ -478,19 +489,21 @@ export default function App() {
                           <thead className="bg-slate-950 text-slate-400">
                             <tr>
                               <th className="p-3">Nombre Ruta</th>
-                              <th className="p-3">Ciudad / Departamento</th>
+                              <th className="p-3">Ciudad</th>
+                              <th className="p-3">Departamento</th>
                               <th className="p-3">Municipio Destino</th>
-                              <th className="p-3">Ubicación Google Maps</th>
+                              <th className="p-3">Google Maps</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-800">
                             {rutas.map(r => (
                               <tr key={r.id}>
                                 <td className="p-3 font-medium text-amber-300">{r.nombre}</td>
-                                <td className="p-3">{r.ciudad}, {r.departamento}</td>
+                                <td className="p-3">{r.ciudad}</td>
+                                <td className="p-3">{r.departamento}</td>
                                 <td className="p-3">{r.municipio}</td>
                                 <td className="p-3">
-                                  <a href={r.googleMaps} target="_blank" rel="noreferrer" className="text-sky-400 underline text-xs">Abrir en Mapa</a>
+                                  <a href={r.googleMaps} target="_blank" rel="noreferrer" className="text-sky-400 underline text-xs">Ver Mapa</a>
                                 </td>
                               </tr>
                             ))}
@@ -501,15 +514,15 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CARGUE DIARIO */}
+                {/* CARGUE DIARIO (Asignación general a ruta por repartidor) */}
                 {pcSubTab === 'cargueview' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
                       <h3 className="text-sm font-bold text-amber-400 flex items-center gap-2">
-                        <ClipboardList className="w-4 h-4" /> Asignar Cargue del Día
+                        <ClipboardList className="w-4 h-4" /> Asignar Cargue General a Ruta
                       </h3>
                       <div>
-                        <label className="text-xs text-slate-400 block mb-1">Repartidor / Admin Asignado</label>
+                        <label className="text-xs text-slate-400 block mb-1">Repartidor Asignado</label>
                         <select 
                           value={cargueForm.repartidorId} 
                           onChange={e => setCargueForm({ ...cargueForm, repartidorId: e.target.value })} 
@@ -521,17 +534,10 @@ export default function App() {
                         </select>
                       </div>
                       <div>
-                        <label className="text-xs text-slate-400 block mb-1">Nombre de la Ruta</label>
+                        <label className="text-xs text-slate-400 block mb-1">Seleccionar Ruta de Distribución</label>
                         <select 
-                          value={cargueForm.ruta}
-                          onChange={e => {
-                            const rObj = rutas.find(rt => rt.nombre === e.target.value);
-                            setCargueForm({ 
-                              ...cargueForm, 
-                              ruta: e.target.value, 
-                              municipio: rObj ? rObj.municipio : cargueForm.municipio 
-                            });
-                          }}
+                          value={cargueForm.rutaNombre}
+                          onChange={e => setCargueForm({ ...cargueForm, rutaNombre: e.target.value })}
                           className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200"
                         >
                           {rutas.map(rt => (
@@ -562,22 +568,23 @@ export default function App() {
                       </div>
 
                       <button onClick={registrarCargueDia} className="w-full bg-amber-600 hover:bg-amber-500 py-2.5 rounded text-xs font-bold text-white">
-                        Asignar Cargue Diario
+                        Asignar Cargue a la Ruta
                       </button>
                     </div>
 
                     <div className="md:col-span-2 bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
-                      <h3 className="text-sm font-bold text-amber-400">Cargues Activos en Ruta</h3>
+                      <h3 className="text-sm font-bold text-amber-400">Cargues Asignados por Ruta</h3>
                       <div className="overflow-x-auto">
                         {carguesDiarios.length === 0 ? (
-                          <p className="text-xs text-slate-400 py-8 text-center">No hay cargues diarios asignados en este momento.</p>
+                          <p className="text-xs text-slate-400 py-8 text-center">No hay cargues activos en este momento.</p>
                         ) : (
                           <table className="w-full text-left text-xs text-slate-300">
                             <thead className="bg-slate-950 text-slate-400 uppercase">
                               <tr>
                                 <th className="p-3">Fecha</th>
                                 <th className="p-3">Repartidor</th>
-                                <th className="p-3">Ruta / Municipio</th>
+                                <th className="p-3">Ruta</th>
+                                <th className="p-3">Municipio (Ruta)</th>
                                 <th className="p-3">Combustible / Base</th>
                               </tr>
                             </thead>
@@ -586,7 +593,8 @@ export default function App() {
                                 <tr key={c.id} className="hover:bg-slate-800/50">
                                   <td className="p-3 text-slate-400">{c.fecha}</td>
                                   <td className="p-3 font-medium text-amber-300">{c.repartidorNombre}</td>
-                                  <td className="p-3">{c.ruta} <span className="block text-[10px] text-slate-400">{c.municipio}</span></td>
+                                  <td className="p-3">{c.rutaNombre}</td>
+                                  <td className="p-3">{c.municipio}</td>
                                   <td className="p-3 text-emerald-400">Comb: ${c.combustible.toLocaleString()}<br/>Base: ${c.dineroBase.toLocaleString()}</td>
                                 </tr>
                               ))}
@@ -594,6 +602,37 @@ export default function App() {
                           </table>
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* INVENTARIO DESPACHADO (Stock individual por repartidor, queda en blanco al cerrar) */}
+                {pcSubTab === 'inventariodespachado' && (
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-bold text-amber-400">Inventario Actual Despachado por Repartidor</h3>
+                    <div className="bg-slate-900 p-5 rounded-xl border border-slate-800">
+                      {carguesDiarios.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-8 text-center">El inventario despachado se encuentra en blanco (vacío o cerrado).</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {carguesDiarios.map(c => (
+                            <div key={c.id} className="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-2">
+                              <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                                <span className="font-bold text-amber-300">{c.repartidorNombre}</span>
+                                <span className="text-[10px] bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded font-semibold">{c.rutaNombre}</span>
+                              </div>
+                              <div className="space-y-1 pt-1">
+                                {c.items.map((it, idx) => (
+                                  <div key={idx} className="flex justify-between text-xs">
+                                    <span className="text-slate-300">{it.prodNombre}</span>
+                                    <span className="font-bold text-amber-400">{it.cantidadActual} und (Asignado: {it.cantidadAsignada})</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -622,7 +661,7 @@ export default function App() {
                 {pcSubTab === 'clientes' && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <h3 className="text-sm font-bold text-amber-400">Directorio de Puntos de Venta</h3>
+                      <h3 className="text-sm font-bold text-amber-400">Directorio de Puntos de Venta (Con Municipio Asignado)</h3>
                       <button onClick={() => setModalAbierto('cliente')} className="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
                         <Plus className="w-4 h-4" /> Nuevo Punto de Venta
                       </button>
@@ -642,7 +681,7 @@ export default function App() {
                             <tr key={c.id}>
                               <td className="p-3 font-medium">{c.nombre}</td>
                               <td className="p-3">{c.zona}</td>
-                              <td className="p-3">{c.municipio}</td>
+                              <td className="p-3 text-amber-300 font-semibold">{c.municipio}</td>
                               <td className="p-3 text-slate-400">{c.direccion}</td>
                             </tr>
                           ))}
@@ -652,13 +691,13 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CONSULTAS */}
+                {/* CONSULTAS & REPORTES (Filtrables por vendedor y de manera general) */}
                 {pcSubTab === 'consultas' && (
                   <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-5">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                       <div>
                         <h3 className="text-md font-bold text-amber-400">Módulo de Consulta y Consolidado de Ventas</h3>
-                        <p className="text-xs text-slate-400">Filtra por zona, municipio o repartidor.</p>
+                        <p className="text-xs text-slate-400">Filtra por vendedor (repartidor), zona o municipio.</p>
                       </div>
                       <button onClick={exportarExcelReporte} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
                         <FileSpreadsheet className="w-4 h-4" /> Exportar a Excel
@@ -675,7 +714,7 @@ export default function App() {
                         <input type="text" value={filtroZona} onChange={e => setFiltroZona(e.target.value)} placeholder="Zona Norte" className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-200" />
                       </div>
                       <div>
-                        <label className="text-[11px] text-slate-400 block mb-1">Filtrar por Repartidor</label>
+                        <label className="text-[11px] text-slate-400 block mb-1">Filtrar por Vendedor / Repartidor</label>
                         <input type="text" value={filtroRepartidor} onChange={e => setFiltroRepartidor(e.target.value)} placeholder="Carlos" className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-200" />
                       </div>
                     </div>
@@ -685,9 +724,9 @@ export default function App() {
                         <thead className="bg-slate-950 text-slate-400 uppercase">
                           <tr>
                             <th className="p-3">Hora</th>
-                            <th className="p-3">Repartidor</th>
+                            <th className="p-3">Vendedor</th>
                             <th className="p-3">Cliente</th>
-                            <th className="p-3">Zona</th>
+                            <th className="p-3">Ruta</th>
                             <th className="p-3">Municipio</th>
                             <th className="p-3">Producto</th>
                             <th className="p-3">Cant</th>
@@ -703,7 +742,7 @@ export default function App() {
                                 <td className="p-3 text-slate-400">{v.hora}</td>
                                 <td className="p-3 font-medium text-amber-300">{v.vendedorNombre}</td>
                                 <td className="p-3">{v.clienteNombre}</td>
-                                <td className="p-3">{v.zona}</td>
+                                <td className="p-3">{v.ruta}</td>
                                 <td className="p-3">{v.municipio}</td>
                                 <td className="p-3">{v.prodNombre}</td>
                                 <td className="p-3">{v.cantidad}</td>
@@ -717,18 +756,18 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CIERRE DE DÍA */}
+                {/* CIERRE GENERAL */}
                 {pcSubTab === 'cierre' && (
                   <div className="bg-slate-900 p-8 rounded-xl border border-slate-800 text-center space-y-6 max-w-xl mx-auto py-12">
-                    <RotateCcw className="w-12 h-12 text-amber-500 mx-auto" />
+                    <History className="w-12 h-12 text-amber-500 mx-auto" />
                     <div>
-                      <h3 className="text-lg font-bold text-slate-200">Cierre Operativo de Día</h3>
+                      <h3 className="text-lg font-bold text-slate-200">Cierre General Operativo</h3>
                       <p className="text-xs text-slate-400 mt-1">
-                        Archiva las ventas activas y reinicia los stocks de ruta.
+                        Al ejecutar el cierre general, el inventario despachado quedará completamente en blanco y se guardarán los informes históricos para consulta y filtrado futuro.
                       </p>
                     </div>
-                    <button onClick={ejecutarCierreDia} className="bg-amber-600 hover:bg-amber-500 px-8 py-3 rounded-lg text-sm font-bold shadow-lg text-white transition-all">
-                      Ejecutar Cierre Diario de Repartos
+                    <button onClick={ejecutarCierreGeneral} className="bg-amber-600 hover:bg-amber-500 px-8 py-3 rounded-lg text-sm font-bold shadow-lg text-white transition-all">
+                      Ejecutar Cierre General de Operaciones
                     </button>
                   </div>
                 )}
@@ -736,7 +775,7 @@ export default function App() {
             )}
           </div>
         ) : (
-          /* MÓVIL VENDEDOR EN CALLE (AHORA EXIGE INICIO DE SESIÓN OBLIGATORIO) */
+          /* MÓVIL VENDEDOR EN CALLE (REQUIERE INICIO DE SESIÓN OBLIGATORIO) */
           <div>
             {!isMobileLoggedIn ? (
               <div className="max-w-md mx-auto bg-slate-900 p-8 rounded-2xl border border-emerald-500/30 shadow-2xl space-y-5 my-12">
@@ -755,7 +794,7 @@ export default function App() {
                       required
                       value={mobileEmail} 
                       onChange={e => setMobileEmail(e.target.value)}
-                      placeholder="carlos@matondi.com o admin@matondi.com"
+                      placeholder="carlos@matondi.com"
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
                     />
                   </div>
