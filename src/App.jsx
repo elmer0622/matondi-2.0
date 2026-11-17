@@ -278,8 +278,11 @@ export default function App() {
     const prod = productos.find(p => p.id === prodSel);
     const repId = mobileUser ? mobileUser.id : 'USR-02';
 
-    const cargueActivo = carguesDiarios.find(c => c.repartidorId === repId);
-    if (!cargueActivo) return alert('No tienes un cargue de ruta asignado para hoy en este usuario.');
+    const cargueActivo = carguesDiarios.find(c => 
+      c.repartidorId === repId || 
+      (mobileUser && c.repartidorNombre.toLowerCase() === mobileUser.nombre.toLowerCase())
+    );
+    if (!cargueActivo) return alert('No tienes un cargue de ruta asignado para hoy.');
 
     const itemCargue = cargueActivo.items.find(i => i.prodId === prodSel);
     if (!itemCargue || itemCargue.cantidadActual < cantSel) return alert('Inventario insuficiente para este producto en tu vehículo.');
@@ -359,8 +362,12 @@ export default function App() {
     return matchMun && matchRep && matchZona;
   });
 
-  // Filtrado de tiendas y productos para el Móvil según el cargue activo del repartidor logueado
-  const cargueMovilActivo = mobileUser ? carguesDiarios.find(c => c.repartidorId === mobileUser.id) : null;
+  // Detección de cargue móvil con coincidencia flexible por ID o por Nombre de Usuario
+  const cargueMovilActivo = mobileUser ? carguesDiarios.find(c => 
+    c.repartidorId === mobileUser.id || 
+    c.repartidorNombre.toLowerCase() === mobileUser.nombre.toLowerCase()
+  ) : null;
+
   const clientesFiltradosMovil = clientes.filter(c => municipioSel ? c.municipio.toLowerCase() === municipioSel.toLowerCase() : false);
   const productosMovilDisponibles = cargueMovilActivo ? cargueMovilActivo.items.filter(i => i.cantidadActual > 0) : [];
 
@@ -860,7 +867,7 @@ export default function App() {
             )}
           </div>
         ) : (
-          /* MÓVIL VENDEDOR EN CALLE (FILTRADO JERÁRQUICO POR MUNICIPIO Y PRODUCTOS DEL CARGUE) */
+          /* MÓVIL VENDEDOR EN CALLE */
           <div>
             {!isMobileLoggedIn ? (
               <div className="max-w-md mx-auto bg-slate-900 p-8 rounded-2xl border border-emerald-500/30 shadow-2xl space-y-5 my-12">
@@ -918,7 +925,7 @@ export default function App() {
                     value={municipioSel} 
                     onChange={e => {
                       setMunicipioSel(e.target.value);
-                      setClienteSel(''); // Limpiar tienda al cambiar municipio
+                      setClienteSel('');
                     }} 
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
                   >
@@ -956,7 +963,7 @@ export default function App() {
                       <option value="">-- Seleccionar Producto del Cargue --</option>
                       {productosMovilDisponibles.map(item => (
                         <option key={item.prodId} value={item.prodId}>
-                          {item.prodName} - Stock: {item.cantidadActual} und (${item.precioUnitario.toLocaleString()})
+                          {item.prodNombre} - Stock: {item.cantidadActual} und (${item.precioUnitario.toLocaleString()})
                         </option>
                       ))}
                     </select>
@@ -964,11 +971,11 @@ export default function App() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">Cantidad</label>
+                      <label className="text-xs text-slate-400 mb-1 block">Cantidad</label>
                       <input type="number" min="1" value={cantSel} onChange={e => setCantSel(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">Método de Pago</label>
+                      <label className="text-xs text-slate-400 mb-1 block">Método de Pago</label>
                       <select value={metodoPago} onChange={e => setMetodoPago(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200">
                         <option value="Efectivo">Efectivo</option>
                         <option value="Nequi">Nequi</option>
@@ -996,14 +1003,16 @@ export default function App() {
         )}
       </main>
 
-      {/* VENTANAS EMERGENTES (MODALES) */}
+      {/* ======================================================== */}
+      {/* VENTANAS EMERGENTES (MODALES) - ESTILO MATONDI 100% OSCURO */}
+      {/* ======================================================== */}
       {modalAbierto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4 animate-in fade-in zoom-in duration-200">
             
             <button 
               onClick={() => setModalAbierto(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 bg-slate-800 p-1.5 rounded-lg border border-slate-700"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 bg-slate-800 p-1.5 rounded-lg border border-slate-700 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
