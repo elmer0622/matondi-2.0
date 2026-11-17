@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, MapPin, Truck, ShoppingCart, Database, FileSpreadsheet, 
-  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2 
+  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2, Edit3, CheckCircle, Eye, FileText 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -13,33 +13,36 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [usuarioActual, setUsuarioActual] = useState(null);
   const [loginEmail, setLoginEmail] = useState('');
+  const [loginPass, setLoginPass] = useState('');
 
   // Control de Autenticación Módulo Móvil
   const [isMobileLoggedIn, setIsMobileLoggedIn] = useState(false);
   const [mobileUser, setMobileUser] = useState(null);
   const [mobileEmail, setMobileEmail] = useState('');
+  const [mobilePass, setMobilePass] = useState('');
 
   // Control de Ventanas Emergentes (Modales)
-  const [modalAbierto, setModalAbierto] = useState(null);
+  const [modalAbierto, setModalAbierto] = useState(null); // 'ruta', 'cliente', 'usuario', 'producto', 'editarRuta', 'verVentasMovil'
+  const [rutaEditando, setRutaEditando] = useState(null);
 
   // Base de datos de Usuarios
   const [usuariosSistema, setUsuariosSistema] = useState([
-    { id: 'USR-01', nombre: 'Administrador Principal', email: 'admin@matondi.com', rol: 'Administrador', vehiculo: 'N/A', estado: 'Activo' },
-    { id: 'USR-02', nombre: 'Carlos Repartidor', email: 'carlos@matondi.com', rol: 'Repartidor', vehiculo: 'Camión 1', estado: 'Activo' }
+    { id: 'USR-01', nombre: 'Administrador Principal', email: 'admin@matondi.com', password: '123', rol: 'Administrador', vehiculo: 'N/A', estado: 'Activo' },
+    { id: 'USR-02', nombre: 'Carlos Repartidor', email: 'carlos@matondi.com', password: '123', rol: 'Repartidor', vehiculo: 'Camión 1', estado: 'Activo' }
   ]);
-  const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', rol: 'Repartidor', vehiculo: '' });
+  const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', password: '', rol: 'Repartidor', vehiculo: '' });
 
-  // Módulo de Creación de Rutas
+  // Módulo de Creación y Gestión de Rutas (Múltiples municipios y estado activo/inactivo)
   const [rutas, setRutas] = useState([
-    { id: 'RUT-01', nombre: 'Ruta Atlántico Centro', ciudad: 'Barranquilla', departamento: 'Atlántico', municipio: 'Palmar de Varela', googleMaps: 'https://maps.google.com/?q=10.7412,-74.7541' }
+    { id: 'RUT-01', nombre: 'Ruta Atlántico Centro', ciudad: 'Barranquilla', departamento: 'Atlántico', municipios: ['Palmar de Varela', 'Santo Tomás'], googleMaps: 'https://maps.google.com/?q=10.7412,-74.7541', estado: 'Activa' }
   ]);
-  const [nuevaRuta, setNuevaRuta] = useState({ nombre: '', ciudad: 'Barranquilla', departamento: 'Atlántico', municipio: '', googleMaps: '' });
+  const [nuevaRuta, setNuevaRuta] = useState({ nombre: '', ciudad: 'Barranquilla', departamento: 'Atlántico', municipioInput: '', municipios: [], googleMaps: '' });
 
   // Directorio de Clientes
   const [clientes, setClientes] = useState([
-    { id: 'CLI-01', nombre: 'Estanco El Trébol', zona: 'Zona Norte', municipio: 'Palmar de Varela', direccion: 'Calle 8 # 5-20', lat: 10.7412, lng: -74.7541, estado: 'Pendiente', revisita: false }
+    { id: 'CLI-01', nombre: 'Estanco El Trébol', zona: 'Zona Norte', municipio: 'Palmar de Varela', direccion: 'Calle 8 # 5-20', estado: 'Pendiente' }
   ]);
-  const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', zona: 'Zona Norte', municipio: 'Palmar de Varela', direccion: '', lat: '', lng: '' });
+  const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', zona: 'Zona Norte', municipio: 'Palmar de Varela', direccion: '' });
 
   // Catálogo de Productos
   const [productos, setProductos] = useState([
@@ -51,7 +54,7 @@ export default function App() {
   ]);
   const [nuevoProd, setNuevoProd] = useState({ nombre: '', precio: '' });
 
-  // Asignación de Cargues del Día por Ruta
+  // Cargues Diarios por Ruta
   const [carguesDiarios, setCarguesDiarios] = useState([]);
   const [cargueForm, setCargueForm] = useState({
     repartidorId: 'USR-02',
@@ -61,9 +64,10 @@ export default function App() {
     items: [{ prodId: 'PROD-01', cantidad: 40, precioUnitario: 6500 }]
   });
 
-  // Historial de Ventas, Inventario Despachado y Cierres Históricos
+  // Historial de Ventas, Cierres y Envíos Móviles
   const [ventas, setVentas] = useState([]);
   const [cierresHistoricos, setCierresHistoricos] = useState([]);
+  const [cierresEnviadosMovil, setCierresEnviadosMovil] = useState([]);
 
   // Estados de formularios en Calle / Móvil
   const [municipioSel, setMunicipioSel] = useState('');
@@ -83,14 +87,15 @@ export default function App() {
   const handleLogin = (e) => {
     e.preventDefault();
     const emailTrim = loginEmail.trim().toLowerCase();
-    const esAdmin = emailTrim.includes('admin') || emailTrim.includes('mavondi') || emailTrim === '';
     let found = usuariosSistema.find(u => u.email.toLowerCase() === emailTrim);
     
     if (!found) {
+      const esAdmin = emailTrim.includes('admin') || emailTrim === '';
       found = {
         id: `USR-${Date.now()}`,
         nombre: esAdmin ? 'Administrador Principal' : 'Repartidor Autorizado',
         email: emailTrim || 'admin@matondi.com',
+        password: loginPass,
         rol: esAdmin ? 'Administrador' : 'Repartidor',
         vehiculo: esAdmin ? 'N/A' : 'Vehículo Ruta',
         estado: 'Activo'
@@ -115,6 +120,7 @@ export default function App() {
         id: `USR-${Date.now()}`,
         nombre: emailTrim.includes('admin') ? 'Administrador en Ruta' : 'Repartidor Autorizado',
         email: emailTrim,
+        password: mobilePass,
         rol: emailTrim.includes('admin') ? 'Administrador' : 'Repartidor',
         vehiculo: 'Vehículo Móvil',
         estado: 'Activo'
@@ -132,12 +138,14 @@ export default function App() {
     setIsLoggedIn(false);
     setUsuarioActual(null);
     setLoginEmail('');
+    setLoginPass('');
   };
 
   const cerrarSesionMovil = () => {
     setIsMobileLoggedIn(false);
     setMobileUser(null);
     setMobileEmail('');
+    setMobilePass('');
   };
 
   const alternarEstadoUsuario = (idUsr) => {
@@ -151,30 +159,53 @@ export default function App() {
       id: `USR-0${usuariosSistema.length + 1}`,
       nombre: sanitizeStr(nuevoUsuario.nombre),
       email: sanitizeStr(nuevoUsuario.email.trim()),
+      password: sanitizeStr(nuevoUsuario.password || '123'),
       rol: nuevoUsuario.rol,
       vehiculo: sanitizeStr(nuevoUsuario.vehiculo || 'Ruta General'),
       estado: 'Activo'
     };
     setUsuariosSistema([...usuariosSistema, usr]);
-    setNuevoUsuario({ nombre: '', email: '', rol: 'Repartidor', vehiculo: '' });
+    setNuevoUsuario({ nombre: '', email: '', password: '', rol: 'Repartidor', vehiculo: '' });
     setModalAbierto(null);
     alert('Usuario registrado con éxito');
   };
 
+  const agregarMunicipioANuevaRuta = () => {
+    if (!nuevaRuta.municipioInput) return;
+    setNuevaRuta({
+      ...nuevaRuta,
+      municipios: [...nuevaRuta.municipios, sanitizeStr(nuevaRuta.municipioInput)],
+      municipioInput: ''
+    });
+  };
+
   const agregarRuta = () => {
-    if (!nuevaRuta.nombre || !nuevaRuta.municipio) return alert('Diligencia el nombre de la ruta y el municipio');
+    if (!nuevaRuta.nombre || nuevaRuta.municipios.length === 0) return alert('Diligencia el nombre de la ruta y al menos un municipio destino.');
     const rut = {
       id: `RUT-0${rutas.length + 1}`,
       nombre: sanitizeStr(nuevaRuta.nombre),
       ciudad: sanitizeStr(nuevaRuta.ciudad || 'Barranquilla'),
       departamento: sanitizeStr(nuevaRuta.departamento || 'Atlántico'),
-      municipio: sanitizeStr(nuevaRuta.municipio),
-      googleMaps: sanitizeStr(nuevaRuta.googleMaps || 'https://maps.google.com')
+      municipios: [...nuevaRuta.municipios],
+      googleMaps: sanitizeStr(nuevaRuta.googleMaps || 'https://maps.google.com'),
+      estado: 'Activa'
     };
     setRutas([...rutas, rut]);
-    setNuevaRuta({ nombre: '', ciudad: 'Barranquilla', departamento: 'Atlántico', municipio: '', googleMaps: '' });
+    setNuevaRuta({ nombre: '', ciudad: 'Barranquilla', departamento: 'Atlántico', municipioInput: '', municipios: [], googleMaps: '' });
     setModalAbierto(null);
     alert('Ruta creada con éxito');
+  };
+
+  const guardarEdicionRuta = () => {
+    if (!rutaEditando) return;
+    setRutas(rutas.map(r => r.id === rutaEditando.id ? rutaEditando : r));
+    setModalAbierto(null);
+    setRutaEditando(null);
+    alert('Ruta modificada con éxito');
+  };
+
+  const cambiarEstadoRuta = (idRuta) => {
+    setRutas(rutas.map(r => r.id === idRuta ? { ...r, estado: r.estado === 'Activa' ? 'Inactiva' : 'Activa' } : r));
   };
 
   const agregarCliente = () => {
@@ -185,13 +216,10 @@ export default function App() {
       zona: nuevoCliente.zona,
       municipio: sanitizeStr(nuevoCliente.municipio || 'Palmar de Varela'),
       direccion: sanitizeStr(nuevoCliente.direccion),
-      lat: Number(nuevoCliente.lat) || 10.7412,
-      lng: Number(nuevoCliente.lng) || -74.7541,
-      estado: 'Pendiente',
-      revisita: false
+      estado: 'Pendiente'
     };
     setClientes([...clientes, cli]);
-    setNuevoCliente({ nombre: '', zona: 'Zona Norte', municipio: 'Palmar de Varela', direccion: '', lat: '', lng: '' });
+    setNuevoCliente({ nombre: '', zona: 'Zona Norte', municipio: 'Palmar de Varela', direccion: '' });
     setModalAbierto(null);
     alert('Cliente creado exitosamente');
   };
@@ -250,7 +278,7 @@ export default function App() {
       repartidorId: cargueForm.repartidorId,
       repartidorNombre: rep.nombre,
       rutaNombre: rutaObj.nombre,
-      municipio: rutaObj.municipio,
+      municipiosStr: rutaObj.municipios.join(', '),
       combustible: Number(cargueForm.combustible) || 0,
       dineroBase: Number(cargueForm.dineroBase) || 0,
       items: cargueForm.items.map(item => {
@@ -278,14 +306,11 @@ export default function App() {
     const prod = productos.find(p => p.id === prodSel);
     const repId = mobileUser ? mobileUser.id : 'USR-02';
 
-    const cargueActivo = carguesDiarios.find(c => 
-      c.repartidorId === repId || 
-      (mobileUser && c.repartidorNombre.toLowerCase() === mobileUser.nombre.toLowerCase())
-    );
+    const cargueActivo = carguesDiarios.find(c => c.repartidorId === repId || c.repartidorNombre.toLowerCase() === mobileUser?.nombre.toLowerCase());
     if (!cargueActivo) return alert('No tienes un cargue de ruta asignado para hoy.');
 
     const itemCargue = cargueActivo.items.find(i => i.prodId === prodSel);
-    if (!itemCargue || itemCargue.cantidadActual < cantSel) return alert('Inventario insuficiente para este producto en tu vehículo.');
+    if (!itemCargue || itemCargue.cantidadActual < cantSel) return alert('Inventario insuficiente en tu vehículo.');
 
     const precioVenta = itemCargue.precioUnitario || prod.precio;
     const nuevaVenta = {
@@ -293,7 +318,7 @@ export default function App() {
       clienteId: clienteSel,
       clienteNombre: cli ? cli.nombre : 'Cliente',
       ruta: cargueActivo.rutaNombre,
-      municipio: cli ? cli.municipio : cargueActivo.municipio,
+      municipio: cli ? cli.municipio : municipioSel,
       zona: cli ? cli.zona : 'Zona General',
       vendedorId: repId,
       vendedorNombre: mobileUser ? mobileUser.nombre : 'Repartidor',
@@ -330,6 +355,24 @@ export default function App() {
     alert('Visita sin venta registrada');
   };
 
+  // Botón móvil para enviar cierre al administrador
+  const enviarCierreMovil = () => {
+    const ventasMovil = ventas.filter(v => v.vendedorId === mobileUser?.id);
+    if (ventasMovil.length === 0) return alert('No tienes ventas registradas para enviar.');
+
+    const reporteMovil = {
+      idEnvio: `ENVIO-${Date.now()}`,
+      vendedorId: mobileUser.id,
+      vendedorNombre: mobileUser.nombre,
+      fecha: new Date().toLocaleDateString(),
+      totalVendido: ventasMovil.reduce((acc, v) => acc + v.total, 0),
+      ventas: [...ventasMovil]
+    };
+
+    setCierresEnviadosMovil([...cierresEnviadosMovil, reporteMovil]);
+    alert('¡Informe de cierre enviado con éxito al Administrador!');
+  };
+
   const ejecutarCierreGeneral = () => {
     if (ventas.length === 0 && carguesDiarios.length === 0) return alert('No hay actividad activa para cerrar.');
     
@@ -355,6 +398,10 @@ export default function App() {
     XLSX.writeFile(wb, `Matondi_Consolidado_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
+  // Cálculo del balance en tiempo real superior
+  const totalDineroRecaudadoGral = ventas.reduce((acc, v) => acc + v.total, 0);
+  const totalCantidadVendidaGral = ventas.reduce((acc, v) => acc + v.cantidad, 0);
+
   const ventasFiltradas = ventas.filter(v => {
     const matchMun = filtroMunicipio ? v.municipio.toLowerCase().includes(filtroMunicipio.toLowerCase()) : true;
     const matchRep = filtroRepartidor ? v.vendedorNombre.toLowerCase().includes(filtroRepartidor.toLowerCase()) : true;
@@ -362,17 +409,31 @@ export default function App() {
     return matchMun && matchRep && matchZona;
   });
 
-  // Detección de cargue móvil con coincidencia flexible por ID o por Nombre de Usuario
-  const cargueMovilActivo = mobileUser ? carguesDiarios.find(c => 
-    c.repartidorId === mobileUser.id || 
-    c.repartidorNombre.toLowerCase() === mobileUser.nombre.toLowerCase()
-  ) : null;
-
+  const cargueMovilActivo = mobileUser ? carguesDiarios.find(c => c.repartidorId === mobileUser.id || c.repartidorNombre.toLowerCase() === mobileUser.nombre.toLowerCase()) : null;
   const clientesFiltradosMovil = clientes.filter(c => municipioSel ? c.municipio.toLowerCase() === municipioSel.toLowerCase() : false);
   const productosMovilDisponibles = cargueMovilActivo ? cargueMovilActivo.items.filter(i => i.cantidadActual > 0) : [];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 relative">
+      
+      {/* 1. BALANCE DE VENTAS EN TIEMPO REAL (PARTE SUPERIOR DE LA PANTALLA) */}
+      <div className="max-w-7xl mx-auto bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 border border-amber-500/40 p-3 rounded-xl mb-4 shadow-xl flex flex-wrap justify-between items-center gap-4">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-amber-400" />
+          <span className="text-xs font-bold uppercase tracking-wider text-amber-300">Balance en Tiempo Real:</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-6 text-xs">
+          <div>
+            <span className="text-slate-400">Total Unidades Vendidas: </span>
+            <strong className="text-white font-bold bg-slate-950 px-2 py-1 rounded border border-slate-800">{totalCantidadVendidaGral} und</strong>
+          </div>
+          <div>
+            <span className="text-slate-400">Dinero Recaudado General: </span>
+            <strong className="text-emerald-400 font-bold bg-slate-950 px-2 py-1 rounded border border-slate-800">${totalDineroRecaudadoGral.toLocaleString()} COP</strong>
+          </div>
+        </div>
+      </div>
+
       {/* ENCABEZADO GENERAL */}
       <header className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center bg-slate-900 border border-amber-900/40 p-4 rounded-xl mb-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-4 md:mb-0">
@@ -411,7 +472,7 @@ export default function App() {
                     <Lock className="w-6 h-6 text-amber-400" />
                   </div>
                   <h2 className="text-lg font-bold text-amber-400">Acceso al Sistema ERP</h2>
-                  <p className="text-xs text-slate-400">Ingresa con tu correo de administrador.</p>
+                  <p className="text-xs text-slate-400">Ingresa tus credenciales de administrador.</p>
                 </div>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
@@ -421,7 +482,16 @@ export default function App() {
                       required
                       value={loginEmail} 
                       onChange={e => setLoginEmail(e.target.value)}
-                      placeholder="admin@matondi.com"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Contraseña</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={loginPass} 
+                      onChange={e => setLoginPass(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
                     />
                   </div>
@@ -514,11 +584,11 @@ export default function App() {
                   </div>
                 )}
 
-                {/* GESTIÓN DE RUTAS */}
+                {/* GESTIÓN DE RUTAS (Modificar, Desactivar y Múltiples Municipios) */}
                 {pcSubTab === 'rutas' && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <h3 className="text-sm font-bold text-amber-400">Rutas de Distribución Asignadas</h3>
+                      <h3 className="text-sm font-bold text-amber-400">Gestión de Rutas de Distribución</h3>
                       <button onClick={() => setModalAbierto('ruta')} className="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
                         <Plus className="w-4 h-4" /> Crear Nueva Ruta
                       </button>
@@ -530,21 +600,34 @@ export default function App() {
                           <thead className="bg-slate-950 text-slate-400">
                             <tr>
                               <th className="p-3">Nombre Ruta</th>
-                              <th className="p-3">Ciudad</th>
-                              <th className="p-3">Departamento</th>
-                              <th className="p-3">Municipio Destino</th>
+                              <th className="p-3">Ciudad / Depto</th>
+                              <th className="p-3">Municipios Asignados</th>
                               <th className="p-3">Google Maps</th>
+                              <th className="p-3">Estado</th>
+                              <th className="p-3">Acciones</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-800">
                             {rutas.map(r => (
                               <tr key={r.id}>
                                 <td className="p-3 font-medium text-amber-300">{r.nombre}</td>
-                                <td className="p-3">{r.ciudad}</td>
-                                <td className="p-3">{r.departamento}</td>
-                                <td className="p-3">{r.municipio}</td>
+                                <td className="p-3">{r.ciudad}, {r.departamento}</td>
+                                <td className="p-3 font-semibold text-slate-200">{r.municipios?.join(', ')}</td>
                                 <td className="p-3">
                                   <a href={r.googleMaps} target="_blank" rel="noreferrer" className="text-sky-400 underline text-xs">Ver Mapa</a>
+                                </td>
+                                <td className="p-3">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${r.estado === 'Activa' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                                    {r.estado}
+                                  </span>
+                                </td>
+                                <td className="p-3 flex gap-2">
+                                  <button onClick={() => { setRutaEditando(r); setModalAbierto('editarRuta'); }} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded" title="Modificar Ruta">
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button onClick={() => cambiarEstadoRuta(r.id)} className={`text-[10px] px-2 py-1 rounded font-bold ${r.estado === 'Activa' ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30' : 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30'}`}>
+                                    {r.estado === 'Activa' ? 'Desactivar' : 'Activar'}
+                                  </button>
                                 </td>
                               </tr>
                             ))}
@@ -581,8 +664,8 @@ export default function App() {
                           onChange={e => setCargueForm({ ...cargueForm, rutaNombre: e.target.value })}
                           className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200"
                         >
-                          {rutas.map(rt => (
-                            <option key={rt.id} value={rt.nombre}>{rt.nombre} ({rt.municipio})</option>
+                          {rutas.filter(r => r.estado === 'Activa').map(rt => (
+                            <option key={rt.id} value={rt.nombre}>{rt.nombre} ({rt.municipios?.join(', ')})</option>
                           ))}
                         </select>
                       </div>
@@ -676,7 +759,6 @@ export default function App() {
                                 <th className="p-3">Fecha</th>
                                 <th className="p-3">Repartidor</th>
                                 <th className="p-3">Ruta</th>
-                                <th className="p-3">Municipio</th>
                                 <th className="p-3">Combustible / Base</th>
                               </tr>
                             </thead>
@@ -686,7 +768,6 @@ export default function App() {
                                   <td className="p-3 text-slate-400">{c.fecha}</td>
                                   <td className="p-3 font-medium text-amber-300">{c.repartidorNombre}</td>
                                   <td className="p-3">{c.rutaNombre}</td>
-                                  <td className="p-3">{c.municipio}</td>
                                   <td className="p-3 text-emerald-400">Comb: ${c.combustible.toLocaleString()}<br/>Base: ${c.dineroBase.toLocaleString()}</td>
                                 </tr>
                               ))}
@@ -704,7 +785,7 @@ export default function App() {
                     <h3 className="text-sm font-bold text-amber-400">Inventario Actual Despachado por Repartidor</h3>
                     <div className="bg-slate-900 p-5 rounded-xl border border-slate-800">
                       {carguesDiarios.length === 0 ? (
-                        <p className="text-xs text-slate-400 py-8 text-center">El inventario despachado se encuentra en blanco (vacío o cerrado).</p>
+                        <p className="text-xs text-slate-400 py-8 text-center">El inventario despachado se encuentra en blanco.</p>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {carguesDiarios.map(c => (
@@ -783,18 +864,37 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CONSULTAS & REPORTES */}
+                {/* CONSULTAS & REPORTES DE CIERRES Y VENTAS */}
                 {pcSubTab === 'consultas' && (
                   <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-5">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                       <div>
-                        <h3 className="text-md font-bold text-amber-400">Módulo de Consulta y Consolidado de Ventas</h3>
-                        <p className="text-xs text-slate-400">Filtra por vendedor (repartidor), zona o municipio.</p>
+                        <h3 className="text-md font-bold text-amber-400">Módulo de Cierres e Informes de Ventas</h3>
+                        <p className="text-xs text-slate-400">Consulta cierres por vendedor y el cierre general discriminado por producto.</p>
                       </div>
                       <button onClick={exportarExcelReporte} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
                         <FileSpreadsheet className="w-4 h-4" /> Exportar a Excel
                       </button>
                     </div>
+
+                    {/* Reportes enviados desde el móvil */}
+                    {cierresEnviadosMovil.length > 0 && (
+                      <div className="bg-slate-950 p-4 rounded-xl border border-emerald-500/30 space-y-3">
+                        <h4 className="text-xs font-bold text-emerald-400 flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4" /> Cierres Enviados por Repartidores en Ruta
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {cierresEnviadosMovil.map(env => (
+                            <div key={env.idEnvio} className="bg-slate-900 p-3 rounded-lg border border-slate-800 text-xs space-y-1">
+                              <p className="font-bold text-amber-300">Vendedor: {env.vendedorNombre}</p>
+                              <p className="text-slate-400">Fecha: {env.fecha}</p>
+                              <p className="text-emerald-400 font-bold">Total Reportado: ${env.totalVendido.toLocaleString()} COP</p>
+                              <p className="text-[11px] text-slate-500">{env.ventas.length} transacciones registradas</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
                       <div>
@@ -806,7 +906,7 @@ export default function App() {
                         <input type="text" value={filtroZona} onChange={e => setFiltroZona(e.target.value)} placeholder="Zona Norte" className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-200" />
                       </div>
                       <div>
-                        <label className="text-[11px] text-slate-400 block mb-1">Filtrar por Vendedor / Repartidor</label>
+                        <label className="text-[11px] text-slate-400 block mb-1">Filtrar por Vendedor</label>
                         <input type="text" value={filtroRepartidor} onChange={e => setFiltroRepartidor(e.target.value)} placeholder="Carlos" className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-200" />
                       </div>
                     </div>
@@ -855,7 +955,7 @@ export default function App() {
                     <div>
                       <h3 className="text-lg font-bold text-slate-200">Cierre General Operativo</h3>
                       <p className="text-xs text-slate-400 mt-1">
-                        Al ejecutar el cierre general, el inventario despachado quedará completamente en blanco y se guardarán los informes históricos para consulta y filtrado futuro.
+                        Al ejecutar el cierre general, el inventario despachado quedará completamente en blanco y se guardarán los informes históricos.
                       </p>
                     </div>
                     <button onClick={ejecutarCierreGeneral} className="bg-amber-600 hover:bg-amber-500 px-8 py-3 rounded-lg text-sm font-bold shadow-lg text-white transition-all">
@@ -867,7 +967,7 @@ export default function App() {
             )}
           </div>
         ) : (
-          /* MÓVIL VENDEDOR EN CALLE */
+          /* MÓVIL VENDEDOR EN CALLE (CON BOTÓN DE ENVÍO DE CIERRE Y VISUALIZACIÓN DE VENTAS) */
           <div>
             {!isMobileLoggedIn ? (
               <div className="max-w-md mx-auto bg-slate-900 p-8 rounded-2xl border border-emerald-500/30 shadow-2xl space-y-5 my-12">
@@ -876,7 +976,7 @@ export default function App() {
                     <Truck className="w-6 h-6 text-emerald-400" />
                   </div>
                   <h2 className="text-lg font-bold text-emerald-400">Acceso Vendedor / Admin en Calle</h2>
-                  <p className="text-xs text-slate-400">Ingresa con tu correo registrado para habilitar el módulo de despacho móvil.</p>
+                  <p className="text-xs text-slate-400">Ingresa tus credenciales para habilitar el despacho móvil.</p>
                 </div>
                 <form onSubmit={handleMobileLogin} className="space-y-4">
                   <div>
@@ -886,7 +986,16 @@ export default function App() {
                       required
                       value={mobileEmail} 
                       onChange={e => setMobileEmail(e.target.value)}
-                      placeholder="carlos@matondi.com"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Contraseña</label>
+                    <input 
+                      type="password" 
+                      required
+                      value={mobilePass} 
+                      onChange={e => setMobilePass(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
                     />
                   </div>
@@ -900,7 +1009,7 @@ export default function App() {
                 <Shield className="w-12 h-12 text-amber-500 mx-auto" />
                 <h3 className="text-lg font-bold text-slate-200">Sin Reparto Asignado</h3>
                 <p className="text-xs text-slate-400">
-                  Hola <strong>{mobileUser?.nombre}</strong>, no tienes un cargue activo asignado para hoy por el Administrador.
+                  Hola <strong>{mobileUser?.nombre}</strong>, no tienes un cargue activo asignado para hoy.
                 </p>
                 <button onClick={cerrarSesionMovil} className="bg-slate-800 px-4 py-2 rounded text-xs text-amber-400 font-bold">
                   Cerrar Sesión
@@ -915,7 +1024,15 @@ export default function App() {
                     </h2>
                     <p className="text-[11px] text-amber-400">Ruta: {cargueMovilActivo.rutaNombre}</p>
                   </div>
-                  <button onClick={cerrarSesionMovil} className="text-[10px] bg-red-600/20 text-red-400 px-2 py-1 rounded">Salir</button>
+                  <div className="flex gap-2">
+                    <button onClick={() => setModalAbierto('verVentasMovil')} className="text-[10px] bg-sky-600/20 text-sky-400 px-2.5 py-1 rounded font-bold flex items-center gap-1">
+                      <Eye className="w-3 h-3" /> Ver Ventas
+                    </button>
+                    <button onClick={enviarCierreMovil} className="text-[10px] bg-amber-600/20 text-amber-400 px-2.5 py-1 rounded font-bold flex items-center gap-1">
+                      <Send className="w-3 h-3" /> Enviar Cierre
+                    </button>
+                    <button onClick={cerrarSesionMovil} className="text-[10px] bg-red-600/20 text-red-400 px-2 py-1 rounded">Salir</button>
+                  </div>
                 </div>
 
                 {/* 1. SELECCIONAR MUNICIPIO */}
@@ -936,7 +1053,7 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* 2. SELECCIONAR TIENDA (Filtro automático basado en el municipio elegido) */}
+                {/* 2. SELECCIONAR TIENDA (Filtro automático por municipio) */}
                 <div>
                   <label className="text-xs text-slate-400 mb-1 block">2. Seleccionar Tienda (Cliente)</label>
                   <select 
@@ -954,7 +1071,7 @@ export default function App() {
 
                 <div className="space-y-3 pt-2">
                   <div>
-                    <label className="text-xs text-slate-400 mb-1 block">3. Producto Autorizado en tu Cargue</label>
+                    <label className="text-xs text-slate-400 block mb-1">3. Producto Autorizado en tu Cargue</label>
                     <select 
                       value={prodSel} 
                       onChange={e => setProdSel(e.target.value)} 
@@ -971,11 +1088,11 @@ export default function App() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">Cantidad</label>
+                      <label className="text-xs text-slate-400 block mb-1">Cantidad</label>
                       <input type="number" min="1" value={cantSel} onChange={e => setCantSel(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">Método de Pago</label>
+                      <label className="text-xs text-slate-400 block mb-1">Método de Pago</label>
                       <select value={metodoPago} onChange={e => setMetodoPago(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200">
                         <option value="Efectivo">Efectivo</option>
                         <option value="Nequi">Nequi</option>
@@ -1003,20 +1120,19 @@ export default function App() {
         )}
       </main>
 
-      {/* ======================================================== */}
-      {/* VENTANAS EMERGENTES (MODALES) - ESTILO MATONDI 100% OSCURO */}
-      {/* ======================================================== */}
+      {/* VENTANAS EMERGENTES (MODALES) 100% ESTILO MATONDI */}
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
           <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4 animate-in fade-in zoom-in duration-200">
             
             <button 
-              onClick={() => setModalAbierto(null)}
+              onClick={() => { setModalAbierto(null); setRutaEditando(null); }}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 bg-slate-800 p-1.5 rounded-lg border border-slate-700 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
 
+            {/* MODAL: CREAR RUTA */}
             {modalAbierto === 'ruta' && (
               <div className="space-y-4">
                 <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
@@ -1025,29 +1141,99 @@ export default function App() {
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Nombre de la Ruta</label>
-                    <input type="text" value={nuevaRuta.nombre} onChange={e => setNuevaRuta({ ...nuevaRuta, nombre: e.target.value })} placeholder="Ej. Ruta Atlántico Centro" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    <input type="text" value={nuevaRuta.nombre} onChange={e => setNuevaRuta({ ...nuevaRuta, nombre: e.target.value })} placeholder="Ruta Atlántico Norte" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-xs text-slate-400 block mb-1">Ciudad</label>
-                      <input type="text" value={nuevaRuta.ciudad} onChange={e => setNuevaRuta({ ...nuevaRuta, ciudad: e.target.value })} placeholder="Barranquilla" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                      <input type="text" value={nuevaRuta.ciudad} onChange={e => setNuevaRuta({ ...nuevaRuta, ciudad: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                     </div>
                     <div>
                       <label className="text-xs text-slate-400 block mb-1">Departamento</label>
-                      <input type="text" value={nuevaRuta.departamento} onChange={e => setNuevaRuta({ ...nuevaRuta, departamento: e.target.value })} placeholder="Atlántico" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                      <input type="text" value={nuevaRuta.departamento} onChange={e => setNuevaRuta({ ...nuevaRuta, departamento: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400 block mb-1">Municipio Destino</label>
-                    <input type="text" value={nuevaRuta.municipio} onChange={e => setNuevaRuta({ ...nuevaRuta, municipio: e.target.value })} placeholder="Palmar de Varela, Santo Tomás..." className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    <label className="text-xs text-slate-400 block mb-1">Agregar Municipios a la Ruta</label>
+                    <div className="flex gap-2">
+                      <input type="text" value={nuevaRuta.municipioInput} onChange={e => setNuevaRuta({ ...nuevaRuta, municipioInput: e.target.value })} placeholder="Ej. Palmar de Varela" className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200" />
+                      <button onClick={agregarMunicipioANuevaRuta} className="bg-amber-600 px-3 py-2 rounded text-xs font-bold text-white">Añadir</button>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {nuevaRuta.municipios.map((m, i) => (
+                        <span key={i} className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">{m}</span>
+                      ))}
+                    </div>
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400 block mb-1">Enlace / Ubicación Google Maps</label>
+                    <label className="text-xs text-slate-400 block mb-1">Enlace Google Maps</label>
                     <input type="text" value={nuevaRuta.googleMaps} onChange={e => setNuevaRuta({ ...nuevaRuta, googleMaps: e.target.value })} placeholder="https://maps.google.com/?q=..." className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                 </div>
-                <button onClick={agregarRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white transition-colors shadow-lg">
+                <button onClick={agregarRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
                   Guardar y Registrar Ruta
+                </button>
+              </div>
+            )}
+
+            {/* MODAL: EDITAR RUTA */}
+            {modalAbierto === 'editarRuta' && rutaEditando && (
+              <div className="space-y-4">
+                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
+                  <Edit3 className="w-5 h-5" /> Modificar Información de Ruta
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Nombre de la Ruta</label>
+                    <input type="text" value={rutaEditando.nombre} onChange={e => setRutaEditando({ ...rutaEditando, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Ciudad</label>
+                      <input type="text" value={rutaEditando.ciudad} onChange={e => setRutaEditando({ ...rutaEditando, ciudad: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Departamento</label>
+                      <input type="text" value={rutaEditando.departamento} onChange={e => setRutaEditando({ ...rutaEditando, departamento: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Enlace Google Maps</label>
+                    <input type="text" value={rutaEditando.googleMaps} onChange={e => setRutaEditando({ ...rutaEditando, googleMaps: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                </div>
+                <button onClick={guardarEdicionRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
+                  Actualizar Cambios de Ruta
+                </button>
+              </div>
+            )}
+
+            {/* MODAL: VER VENTAS DESDE MÓVIL */}
+            {modalAbierto === 'verVentasMovil' && mobileUser && (
+              <div className="space-y-4 max-h-[80vh] overflow-y-auto">
+                <h3 className="text-md font-bold text-emerald-400 flex items-center gap-2">
+                  <FileText className="w-5 h-5" /> Mis Ventas Realizadas (Ruta Actual)
+                </h3>
+                <div className="space-y-2">
+                  {ventas.filter(v => v.vendedorId === mobileUser.id).length === 0 ? (
+                    <p className="text-xs text-slate-400 text-center py-6">No has registrado ventas todavía en esta sesión.</p>
+                  ) : (
+                    ventas.filter(v => v.vendedorId === mobileUser.id).map(v => (
+                      <div key={v.id} className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs flex justify-between items-center">
+                        <div>
+                          <p className="font-bold text-slate-200">{v.clienteNombre} ({v.municipio})</p>
+                          <p className="text-[11px] text-slate-400">{v.prodName || v.prodNombre} x {v.cantidad} und ({v.metodo})</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-emerald-400">${v.total.toLocaleString()} COP</p>
+                          <p className="text-[10px] text-slate-500">{v.hora}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <button onClick={() => setModalAbierto(null)} className="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-lg text-xs font-bold text-slate-200">
+                  Cerrar Ventana
                 </button>
               </div>
             )}
@@ -1077,7 +1263,7 @@ export default function App() {
                     <input type="text" value={nuevoCliente.direccion} onChange={e => setNuevoCliente({ ...nuevoCliente, direccion: e.target.value })} placeholder="Calle 8 # 5-20" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                 </div>
-                <button onClick={agregarCliente} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white transition-colors shadow-lg">
+                <button onClick={agregarCliente} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
                   Guardar Cliente
                 </button>
               </div>
@@ -1091,11 +1277,15 @@ export default function App() {
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Nombre Completo</label>
-                    <input type="text" value={nuevoUsuario.nombre} onChange={e => setNuevoUsuario({ ...nuevoUsuario, nombre: e.target.value })} placeholder="Carlos Pérez" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    <input type="text" value={nuevoUsuario.nombre} onChange={e => setNuevoUsuario({ ...nuevoUsuario, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Correo Electrónico (Login)</label>
-                    <input type="email" value={nuevoUsuario.email} onChange={e => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })} placeholder="carlos@matondi.com" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    <input type="email" value={nuevoUsuario.email} onChange={e => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Contraseña</label>
+                    <input type="password" value={nuevoUsuario.password} onChange={e => setNuevoUsuario({ ...nuevoUsuario, password: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
@@ -1107,11 +1297,11 @@ export default function App() {
                     </div>
                     <div>
                       <label className="text-xs text-slate-400 block mb-1">Vehículo / Ruta</label>
-                      <input type="text" value={nuevoUsuario.vehiculo} onChange={e => setNuevoUsuario({ ...nuevoUsuario, vehiculo: e.target.value })} placeholder="Camión 1" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                      <input type="text" value={nuevoUsuario.vehiculo} onChange={e => setNuevoUsuario({ ...nuevoUsuario, vehiculo: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                     </div>
                   </div>
                 </div>
-                <button onClick={agregarUsuarioSistema} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white transition-colors shadow-lg">
+                <button onClick={agregarUsuarioSistema} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
                   Guardar Empleado
                 </button>
               </div>
@@ -1125,14 +1315,14 @@ export default function App() {
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Nombre del Producto</label>
-                    <input type="text" value={nuevoProd.nombre} onChange={e => setNuevoProd({ ...nuevoProd, nombre: e.target.value })} placeholder="Cerveza Artesanal 330ml" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    <input type="text" value={nuevoProd.nombre} onChange={e => setNuevoProd({ ...nuevoProd, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Precio Unitario (COP)</label>
-                    <input type="number" value={nuevoProd.precio} onChange={e => setNuevoProd({ ...nuevoProd, precio: e.target.value })} placeholder="7000" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    <input type="number" value={nuevoProd.precio} onChange={e => setNuevoProd({ ...nuevoProd, precio: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                 </div>
-                <button onClick={agregarProducto} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white transition-colors shadow-lg">
+                <button onClick={agregarProducto} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
                   Registrar Producto
                 </button>
               </div>
