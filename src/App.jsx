@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, MapPin, Truck, ShoppingCart, Database, FileSpreadsheet, 
-  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2, Edit3, CheckCircle, Eye, FileText, Map, LogOut, CheckSquare 
+  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2, Edit3, CheckCircle, Eye, FileText, Map, LogOut, Layers 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -61,24 +61,31 @@ export default function App() {
   ]);
   const [nuevoProd, setNuevoProd] = useState({ nombre: '', presentacion: '1000', precio: '' });
 
-  // Cargues Diarios / Despachos
+  // Cargues Diarios / Despachos (Con formulario reiniciable)
   const [carguesDiarios, setCarguesDiarios] = useState([]);
   const [cargueForm, setCargueForm] = useState({
     repartidorId: 'USR-02',
     rutaNombre: 'Ruta Atlántico R1',
-    combustible: 25000,
-    dineroBase: 50000,
-    dineroManana: 0,
-    dineroTarde: 0,
+    combustible: '',
+    dineroBase: '',
+    dineroManana: '',
+    dineroTarde: '',
     items: [
-      { prodId: 'PROD-01', cantidadCargadas: 50, cantidadRegresadas: 0, precioUnitario: 8000 }
+      { prodId: 'PROD-01', cantidadCargadas: '', cantidadRegresadas: 0, precioUnitario: 8000 }
     ]
   });
 
-  // Ventas y Liquidaciones
+  // Ventas y Liquidaciones de Gastos de Ruta
   const [ventas, setVentas] = useState([]);
   const [gastosRuta, setGastosRuta] = useState([]);
-  const [nuevoGasto, setNuevoGasto] = useState({ tipo: 'COMBUSTIBLE', valor: '', concepto: '', metodo: 'EFECTIVO' });
+  const [nuevoGasto, setNuevoGasto] = useState({ 
+    rutaNombre: 'Ruta Atlántico R1', 
+    empleado: '', 
+    tipo: 'COMBUSTIBLE', 
+    valor: '', 
+    concepto: '', 
+    metodo: 'EFECTIVO' 
+  });
   const [cierresHistoricos, setCierresHistoricos] = useState([]);
   const [cierresEnviadosMovil, setCierresEnviadosMovil] = useState([]);
 
@@ -96,6 +103,7 @@ export default function App() {
   // Filtros
   const [filtroMunicipio, setFiltroMunicipio] = useState('');
   const [filtroRepartidor, setFiltroRepartidor] = useState('');
+  const [filtroZona, setFiltroZona] = useState('');
 
   const sanitizeStr = (str) => String(str).replace(/[<>]/g, '');
 
@@ -281,7 +289,7 @@ export default function App() {
 
     setCargueForm({
       ...cargueForm,
-      items: [...cargueForm.items, { prodId: siguienteProd.id, cantidadCargadas: 30, cantidadRegresadas: 0, precioUnitario: siguienteProd.precio }]
+      items: [...cargueForm.items, { prodId: siguienteProd.id, cantidadCargadas: '', cantidadRegresadas: 0, precioUnitario: siguienteProd.precio }]
     });
   };
 
@@ -294,7 +302,7 @@ export default function App() {
         nuevosItems[index].precioUnitario = prodSelObj.precio;
       }
     } else {
-      nuevosItems[index][campo] = Number(valor) || 0;
+      nuevosItems[index][campo] = valor === '' ? '' : Number(valor);
     }
     setCargueForm({ ...cargueForm, items: nuevosItems });
   };
@@ -304,6 +312,7 @@ export default function App() {
     setCargueForm({ ...cargueForm, items: nuevosItems });
   };
 
+  // Función para registrar el despacho y LIMPIAR automáticamente todas las variables para un nuevo registro
   const registrarCargueDia = () => {
     const rep = usuariosSistema.find(u => u.id === cargueForm.repartidorId);
     if (!rep) return alert('Selecciona un repartidor válido');
@@ -343,21 +352,38 @@ export default function App() {
     };
 
     setCarguesDiarios([...carguesDiarios, nuevoCargueRegistro]);
-    alert('¡Despacho de ruta registrado con éxito en el inventario!');
+    
+    // LIMPIEZA AUTOMÁTICA DE TODAS LAS VARIABLES DEL FORMULARIO DE CARGUE
+    setCargueForm({
+      repartidorId: usuariosSistema.find(u => u.rol === 'Repartidor')?.id || usuariosSistema[0].id,
+      rutaNombre: rutas[0]?.nombre || '',
+      combustible: '',
+      dineroBase: '',
+      dineroManana: '',
+      dineroTarde: '',
+      items: [
+        { prodId: productos[0]?.id || '', cantidadCargadas: '', cantidadRegresadas: 0, precioUnitario: productos[0]?.precio || 0 }
+      ]
+    });
+
+    alert('¡Despacho registrado con éxito! Todos los campos han sido limpiados para un nuevo registro.');
   };
 
   const registrarGastoRuta = () => {
-    if (!nuevoGasto.valor || !nuevoGasto.concepto) return alert('Diligencia el valor y el concepto del gasto');
+    if (!nuevoGasto.valor || !nuevoGasto.concepto || !nuevoGasto.empleado) return alert('Diligencia la ruta, el empleado, el valor y el concepto del gasto');
     const gasto = {
       id: `GAST-${Date.now()}`,
+      fecha: new Date().toLocaleDateString(),
+      rutaNombre: sanitizeStr(nuevoGasto.rutaNombre),
+      empleado: sanitizeStr(nuevoGasto.empleado),
       tipo: nuevoGasto.tipo,
       valor: Number(nuevoGasto.valor),
       concepto: sanitizeStr(nuevoGasto.concepto),
       metodo: nuevoGasto.metodo
     };
     setGastosRuta([...gastosRuta, gasto]);
-    setNuevoGasto({ tipo: 'COMBUSTIBLE', valor: '', concepto: '', metodo: 'EFECTIVO' });
-    alert('Gasto informativo registrado con éxito');
+    setNuevoGasto({ rutaNombre: rutas[0]?.nombre || '', empleado: '', tipo: 'COMBUSTIBLE', valor: '', concepto: '', metodo: 'EFECTIVO' });
+    alert('Gasto de ruta registrado y guardado en registros con éxito');
   };
 
   const registrarVenta = () => {
@@ -474,9 +500,12 @@ export default function App() {
     XLSX.writeFile(wb, `Matondi_Liquidacion_Ruta_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
-  // Balance en tiempo real superior
+  // Balance en tiempo real superior (más grande)
   const totalDineroRecaudadoGral = ventas.reduce((acc, v) => acc + v.total, 0);
   const totalCantidadVendidaGral = ventas.reduce((acc, v) => acc + v.cantidad, 0);
+
+  // Totalizador de gastos de ruta
+  const totalValorGastosRuta = gastosRuta.reduce((acc, g) => acc + g.valor, 0);
 
   // Consolidado por productos de los cierres enviados por los repartidores
   const productosConsolidadosCierres = {};
@@ -499,6 +528,13 @@ export default function App() {
   const sumatoriaCantidadCierres = listaProductosCierres.reduce((acc, item) => acc + item.cantidad, 0);
   const sumatoriaValorCierres = listaProductosCierres.reduce((acc, item) => acc + item.total, 0);
 
+  const ventasFiltradas = ventas.filter(v => {
+    const matchMun = filtroMunicipio ? v.municipio.toLowerCase().includes(filtroMunicipio.toLowerCase()) : true;
+    const matchRep = filtroRepartidor ? v.vendedorNombre.toLowerCase().includes(filtroRepartidor.toLowerCase()) : true;
+    const matchZona = filtroZona ? v.ruta.toLowerCase().includes(filtroZona.toLowerCase()) : true;
+    return matchMun && matchRep && matchZona;
+  });
+
   const cargueMovilActivo = mobileUser ? carguesDiarios.find(c => c.repartidorId === mobileUser.id || c.repartidorNombre.toLowerCase() === mobileUser.nombre.toLowerCase()) : null;
   const municipiosRutaMovil = cargueMovilActivo ? (rutas.find(r => r.nombre === cargueMovilActivo.rutaNombre)?.municipios || []) : [];
   const clientesFiltradosMovil = clientes.filter(c => municipioSel ? (c.municipio.toLowerCase() === municipioSel.toLowerCase() && municipiosRutaMovil.map(m => m.toLowerCase()).includes(c.municipio.toLowerCase())) : false);
@@ -507,7 +543,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 relative">
       
-      {/* ENCABEZADO GENERAL FUSIONADO: NOMBRE ARRIBA/LADO Y CUADROS DE DATOS INTEGRADOS */}
+      {/* ENCABEZADO GENERAL FUSIONADO (NOMBRE ARRIBA Y CUADROS DE DATOS INTEGRADOS SIN TEXTO REDUNDANTE) */}
       <header className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center bg-slate-900 border border-amber-900/40 p-4 rounded-xl mb-6 shadow-2xl relative gap-4">
         
         <div className="flex flex-col md:flex-row items-center gap-6 w-full lg:w-auto">
@@ -538,6 +574,7 @@ export default function App() {
           </div>
         </div>
 
+        {/* Botones de inicio estilo cuadrado Windows y botón de cerrar sesión pequeño en esquina */}
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setActiveTab('pc')}
@@ -738,7 +775,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CARGUE DESPACHO RUTA */}
+                {/* CARGUE DESPACHO RUTA (Limpia variables automáticamente al generar) */}
                 {pcSubTab === 'cargueview' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
@@ -953,13 +990,35 @@ export default function App() {
                   </div>
                 )}
 
-                {/* GASTOS DE RUTA (SOLO INFORMATIVO) */}
+                {/* GASTOS DE RUTA (PURAMENTE INFORMATIVO, PIDE RUTA Y EMPLEADO, CON TOTALIZADOR Y FECHA) */}
                 {pcSubTab === 'gastos' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
                       <h3 className="text-sm font-bold text-amber-400 flex items-center gap-2">
-                        <FileSpreadsheet className="w-4 h-4" /> Registro Informativo de Gastos
+                        <FileSpreadsheet className="w-4 h-4" /> Registro Informativo de Gastos de Ruta
                       </h3>
+                      <div>
+                        <label className="text-xs text-slate-400 block mb-1">Ruta que Consume el Gasto</label>
+                        <select 
+                          value={nuevoGasto.rutaNombre} 
+                          onChange={e => setNuevoGasto({ ...nuevoGasto, rutaNombre: e.target.value })} 
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200"
+                        >
+                          {rutas.filter(r => r.estado === 'Activa').map(rt => (
+                            <option key={rt.id} value={rt.nombre}>{rt.nombre}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-slate-400 block mb-1">Empleado que Recibe / Incurre</label>
+                        <input 
+                          type="text" 
+                          value={nuevoGasto.empleado} 
+                          onChange={e => setNuevoGasto({ ...nuevoGasto, empleado: e.target.value })} 
+                          placeholder="Ej. José Arteta" 
+                          className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200" 
+                        />
+                      </div>
                       <div>
                         <label className="text-xs text-slate-400 block mb-1">Tipo de Gasto</label>
                         <select 
@@ -993,24 +1052,18 @@ export default function App() {
                           className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200" 
                         />
                       </div>
-                      <div>
-                        <label className="text-xs text-slate-400 block mb-1">Efectivo / Cuenta</label>
-                        <select 
-                          value={nuevoGasto.metodo} 
-                          onChange={e => setNuevoGasto({ ...nuevoGasto, metodo: e.target.value })} 
-                          className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200"
-                        >
-                          <option value="EFECTIVO">Efectivo</option>
-                          <option value="CUENTA">Cuenta / Transferencia</option>
-                        </select>
-                      </div>
                       <button onClick={registrarGastoRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-2.5 rounded-none text-xs font-bold text-white shadow-lg">
-                        Guardar Gasto Informativo
+                        Guardar Gasto en Registros
                       </button>
                     </div>
 
                     <div className="md:col-span-2 bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
-                      <h3 className="text-sm font-bold text-amber-400">Resumen Informativo de Gastos de Ruta</h3>
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <h3 className="text-sm font-bold text-amber-400">Resumen y Totalización de Gastos de Ruta</h3>
+                        <span className="text-xs bg-slate-950 px-3 py-1 rounded border border-slate-800 text-emerald-400 font-bold">
+                          Total General: ${totalValorGastosRuta.toLocaleString()} COP
+                        </span>
+                      </div>
                       <div className="overflow-x-auto">
                         {gastosRuta.length === 0 ? (
                           <p className="text-xs text-slate-400 py-8 text-center">No hay gastos informativos registrados.</p>
@@ -1018,22 +1071,30 @@ export default function App() {
                           <table className="w-full text-left text-xs text-slate-300">
                             <thead className="bg-slate-950 text-slate-400 uppercase">
                               <tr>
-                                <th className="p-3">Tipo</th>
-                                <th className="p-3">Concepto</th>
-                                <th className="p-3">Método</th>
-                                <th className="p-3">Valor</th>
+                                <th className="p-3">Fecha</th>
+                                <th className="p-3">Ruta</th>
+                                <th className="p-3">Empleado</th>
+                                <th className="p-3">Tipo / Concepto</th>
+                                <th className="p-3 text-right">Valor</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800">
                               {gastosRuta.map(g => (
                                 <tr key={g.id}>
-                                  <td className="p-3 font-medium text-amber-300">{g.tipo}</td>
-                                  <td className="p-3">{g.concepto}</td>
-                                  <td className="p-3">{g.metodo}</td>
-                                  <td className="p-3 font-bold text-emerald-400">${g.valor.toLocaleString()} COP</td>
+                                  <td className="p-3 text-slate-400">{g.fecha}</td>
+                                  <td className="p-3 font-semibold text-amber-300">{g.rutaNombre}</td>
+                                  <td className="p-3">{g.empleado}</td>
+                                  <td className="p-3">{g.tipo}: {g.concepto}</td>
+                                  <td className="p-3 text-right font-bold text-emerald-400">${g.valor.toLocaleString()} COP</td>
                                 </tr>
                               ))}
                             </tbody>
+                            <tfoot className="bg-slate-950 font-bold text-xs border-t border-slate-800">
+                              <tr>
+                                <td colSpan="4" className="p-3 text-right text-amber-300">SUMATORIA TOTAL GASTOS:</td>
+                                <td className="p-3 text-right text-emerald-400">${totalValorGastosRuta.toLocaleString()} COP</td>
+                              </tr>
+                            </tfoot>
                           </table>
                         )}
                       </div>
@@ -1121,13 +1182,13 @@ export default function App() {
                   </div>
                 )}
 
-                {/* MÓDULO DE CONSULTA DE CIERRES ENVIADOS POR REPARTIDORES (LISTADO POR PRODUCTOS Y SUMATORIA FINAL) */}
+                {/* MÓDULO DE CONSULTA: CIERRES ENVIADOS POR REPARTIDORES CON SUMATORIA FINAL */}
                 {pcSubTab === 'consultas' && (
                   <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-6">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
                       <div>
                         <h3 className="text-md font-bold text-amber-400">Módulo de Consulta: Cierres Enviados por Repartidores</h3>
-                        <p className="text-xs text-slate-400">Listado consolidado de productos vendidos y recaudados en los cierres enviados desde ruta.</p>
+                        <p className="text-xs text-slate-400">Listado consolidado de productos vendidos y recaudados con sumatoria total al final.</p>
                       </div>
                       <button onClick={exportarExcelReporte} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-none text-xs font-bold flex items-center gap-2">
                         <FileSpreadsheet className="w-4 h-4" /> Exportar a Excel
