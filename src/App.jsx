@@ -1417,4 +1417,224 @@ export default function App() {
                   </div>
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Enlace Google Maps</label>
-                    <input type="text" value
+                    <input type="text" value={nuevaRuta.googleMaps} onChange={e => setNuevaRuta({ ...nuevaRuta, googleMaps: e.target.value })} placeholder="https://maps.google.com/?q=..." className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                </div>
+                <button onClick={agregarRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
+                  Guardar y Registrar Ruta
+                </button>
+              </div>
+            )}
+
+            {modalAbierto === 'editarRuta' && rutaEditando && (
+              <div className="space-y-4">
+                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
+                  <Edit3 className="w-5 h-5" /> Modificar Información de Ruta
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Nombre de la Ruta</label>
+                    <input type="text" value={rutaEditando.nombre} onChange={e => setRutaEditando({ ...rutaEditando, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Ciudad</label>
+                      <input type="text" value={rutaEditando.ciudad} onChange={e => setRutaEditando({ ...rutaEditando, ciudad: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Departamento</label>
+                      <input type="text" value={rutaEditando.departamento} onChange={e => setRutaEditando({ ...rutaEditando, departamento: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Enlace Google Maps</label>
+                    <input type="text" value={rutaEditando.googleMaps} onChange={e => setRutaEditando({ ...rutaEditando, googleMaps: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                </div>
+                <button onClick={guardarEdicionRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
+                  Actualizar Cambios de Ruta
+                </button>
+              </div>
+            )}
+
+            {modalAbierto === 'editarProducto' && productoEditando && (
+              <div className="space-y-4">
+                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
+                  <Edit3 className="w-5 h-5" /> Editar Producto Individual
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Nombre del Producto</label>
+                    <input type="text" value={productoEditando.nombre} onChange={e => setProductoEditando({ ...productoEditando, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Presentación (mL)</label>
+                    <input type="text" value={productoEditando.presentacion} onChange={e => setProductoEditando({ ...productoEditando, presentacion: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Precio Unitario (COP)</label>
+                    <input type="number" value={productoEditando.precio} onChange={e => setProductoEditando({ ...productoEditando, precio: Number(e.target.value) })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                </div>
+                <button onClick={guardarEdicionProducto} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
+                  Guardar Cambios de Producto
+                </button>
+              </div>
+            )}
+
+            {modalAbierto === 'geoCliente' && clienteEditando && (
+              <div className="space-y-4">
+                <h3 className="text-md font-bold text-sky-400 flex items-center gap-2">
+                   Geolocalización GPS: {clienteEditando.nombre}
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Municipio / Dirección</label>
+                    <p className="text-xs font-medium text-slate-200">{clienteEditando.municipio} - {clienteEditando.direccion}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Latitud</label>
+                      <input type="text" value={clienteEditando.lat} onChange={e => setClienteEditando({ ...clienteEditando, lat: e.target.value })} placeholder="10.7412" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Longitud</label>
+                      <input type="text" value={clienteEditando.lng} onChange={e => setClienteEditando({ ...clienteEditando, lng: e.target.value })} placeholder="-74.7541" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    </div>
+                  </div>
+                </div>
+                <button onClick={guardarGeolocalizacionCliente} className="w-full bg-sky-600 hover:bg-sky-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
+                  Guardar Coordenadas GPS
+                </button>
+              </div>
+            )}
+
+            {modalAbierto === 'verVentasMovil' && mobileUser && (
+              <div className="space-y-4 max-h-[80vh] overflow-y-auto">
+                <h3 className="text-md font-bold text-emerald-400 flex items-center gap-2">
+                  <FileText className="w-5 h-5" /> Mis Ventas Realizadas (Ruta Actual)
+                </h3>
+                <div className="space-y-2">
+                  {ventas.filter(v => v.vendedorId === mobileUser.id).length === 0 ? (
+                    <p className="text-xs text-slate-400 text-center py-6">No has registrado ventas todavía en esta sesión.</p>
+                  ) : (
+                    ventas.filter(v => v.vendedorId === mobileUser.id).map(v => (
+                      <div key={v.id} className="bg-slate-950 p-3 rounded-none border border-slate-800 text-xs flex justify-between items-center">
+                        <div>
+                          <p className="font-bold text-slate-200">{v.clienteNombre} ({v.municipio})</p>
+                          <p className="text-[11px] text-slate-400">{v.prodNombre} x {v.cantidad} und ({v.metodo})</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-emerald-400">${v.total.toLocaleString()} COP</p>
+                          <p className="text-[10px] text-slate-500">{v.hora}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <button onClick={() => setModalAbierto(null)} className="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-none text-xs font-bold text-slate-200">
+                  Cerrar Ventana
+                </button>
+              </div>
+            )}
+
+            {modalAbierto === 'cliente' && (
+              <div className="space-y-4">
+                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
+                  <Users className="w-5 h-5" /> Registrar Nuevo Establecimiento Oficial
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Nombre del Establecimiento</label>
+                    <input type="text" value={nuevoCliente.nombre} onChange={e => setNuevoCliente({ ...nuevoCliente, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Zona / Ruta</label>
+                      <input type="text" value={nuevoCliente.zona} onChange={e => setNuevoCliente({ ...nuevoCliente, zona: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Municipio</label>
+                      <input type="text" value={nuevoCliente.municipio} onChange={e => setNuevoCliente({ ...nuevoCliente, municipio: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Dirección / Referencia</label>
+                    <input type="text" value={nuevoCliente.direccion} onChange={e => setNuevoCliente({ ...nuevoCliente, direccion: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                </div>
+                <button onClick={agregarCliente} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
+                  Guardar Establecimiento
+                </button>
+              </div>
+            )}
+
+            {modalAbierto === 'usuario' && (
+              <div className="space-y-4">
+                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
+                  <UserCheck className="w-5 h-5" /> Registrar Nuevo Empleado
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Nombre Completo</label>
+                    <input type="text" value={nuevoUsuario.nombre} onChange={e => setNuevoUsuario({ ...nuevoUsuario, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Correo Electrónico (Login)</label>
+                    <input type="email" value={nuevoUsuario.email} onChange={e => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Contraseña</label>
+                    <input type="password" value={nuevoUsuario.password} onChange={e => setNuevoUsuario({ ...nuevoUsuario, password: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Rol</label>
+                      <select value={nuevoUsuario.rol} onChange={e => setNuevoUsuario({ ...nuevoUsuario, rol: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200">
+                        <option value="Repartidor">Repartidor</option>
+                        <option value="Administrador">Administrador</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">Vehículo / Ruta</label>
+                      <input type="text" value={nuevoUsuario.vehiculo} onChange={e => setNuevoUsuario({ ...nuevoUsuario, vehiculo: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    </div>
+                  </div>
+                </div>
+                <button onClick={agregarUsuarioSistema} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
+                  Guardar Empleado
+                </button>
+              </div>
+            )}
+
+            {modalAbierto === 'producto' && (
+              <div className="space-y-4">
+                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
+                  <Package className="w-5 h-5" /> Agregar Producto al Catálogo
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Nombre del Producto</label>
+                    <input type="text" value={nuevoProd.nombre} onChange={e => setNuevoProd({ ...nuevoProd, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Presentación (mL)</label>
+                    <input type="text" value={nuevoProd.presentacion} onChange={e => setNuevoProd({ ...nuevoProd, presentacion: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Precio Unitario (COP)</label>
+                    <input type="number" value={nuevoProd.precio} onChange={e => setNuevoProd({ ...nuevoProd, precio: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                </div>
+                <button onClick={agregarProducto} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
+                  Registrar Producto
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
