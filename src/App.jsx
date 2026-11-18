@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, MapPin, Truck, ShoppingCart, Database, FileSpreadsheet, 
-  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2, Edit3, CheckCircle, Eye, FileText, Map, LogOut, Layers 
+  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2, Edit3, CheckCircle, Eye, FileText, Map, LogOut, CheckSquare 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -96,7 +96,6 @@ export default function App() {
   // Filtros
   const [filtroMunicipio, setFiltroMunicipio] = useState('');
   const [filtroRepartidor, setFiltroRepartidor] = useState('');
-  const [filtroZona, setFiltroZona] = useState('');
 
   const sanitizeStr = (str) => String(str).replace(/[<>]/g, '');
 
@@ -475,16 +474,30 @@ export default function App() {
     XLSX.writeFile(wb, `Matondi_Liquidacion_Ruta_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
-  // Balance en tiempo real superior (ampliado sin título redundante)
+  // Balance en tiempo real superior
   const totalDineroRecaudadoGral = ventas.reduce((acc, v) => acc + v.total, 0);
   const totalCantidadVendidaGral = ventas.reduce((acc, v) => acc + v.cantidad, 0);
 
-  const ventasFiltradas = ventas.filter(v => {
-    const matchMun = filtroMunicipio ? v.municipio.toLowerCase().includes(filtroMunicipio.toLowerCase()) : true;
-    const matchRep = filtroRepartidor ? v.vendedorNombre.toLowerCase().includes(filtroRepartidor.toLowerCase()) : true;
-    const matchZona = filtroZona ? v.ruta.toLowerCase().includes(filtroZona.toLowerCase()) : true;
-    return matchMun && matchRep && matchZona;
+  // Consolidado por productos de los cierres enviados por los repartidores
+  const productosConsolidadosCierres = {};
+  cierresEnviadosMovil.forEach(cierre => {
+    cierre.ventas.forEach(v => {
+      if (!productosConsolidadosCierres[v.prodNombre]) {
+        productosConsolidadosCierres[v.prodNombre] = { cantidad: 0, total: 0 };
+      }
+      productosConsolidadosCierres[v.prodNombre].cantidad += v.cantidad;
+      productosConsolidadosCierres[v.prodNombre].total += v.total;
+    });
   });
+
+  const listaProductosCierres = Object.keys(productosConsolidadosCierres).map(nombre => ({
+    nombre,
+    cantidad: productosConsolidadosCierres[nombre].cantidad,
+    total: productosConsolidadosCierres[nombre].total
+  }));
+
+  const sumatoriaCantidadCierres = listaProductosCierres.reduce((acc, item) => acc + item.cantidad, 0);
+  const sumatoriaValorCierres = listaProductosCierres.reduce((acc, item) => acc + item.total, 0);
 
   const cargueMovilActivo = mobileUser ? carguesDiarios.find(c => c.repartidorId === mobileUser.id || c.repartidorNombre.toLowerCase() === mobileUser.nombre.toLowerCase()) : null;
   const municipiosRutaMovil = cargueMovilActivo ? (rutas.find(r => r.nombre === cargueMovilActivo.rutaNombre)?.municipios || []) : [];
@@ -497,7 +510,6 @@ export default function App() {
       {/* ENCABEZADO GENERAL FUSIONADO: NOMBRE ARRIBA/LADO Y CUADROS DE DATOS INTEGRADOS */}
       <header className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center bg-slate-900 border border-amber-900/40 p-4 rounded-xl mb-6 shadow-2xl relative gap-4">
         
-        {/* Fusión: Logo, Título y Cuadros de Datos en una sola fila compacta */}
         <div className="flex flex-col md:flex-row items-center gap-6 w-full lg:w-auto">
           <div className="flex items-center gap-3">
             <div className="bg-amber-600/20 p-2.5 rounded-xl border border-amber-500/30">
@@ -509,7 +521,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Cuadros de datos numéricos en tiempo real (sin texto redundante) */}
           <div className="flex items-center gap-4 bg-slate-950/90 px-4 py-2.5 rounded border border-amber-500/40 shadow-inner">
             <div className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-amber-400" />
@@ -527,7 +538,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Botones de inicio estilo cuadrado Windows y botón de cerrar sesión pequeño en esquina */}
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setActiveTab('pc')}
@@ -610,7 +620,7 @@ export default function App() {
                       { id: 'gastos', label: 'Gastos de Ruta', icon: FileSpreadsheet },
                       { id: 'productos', label: 'Catálogo & Precios', icon: Package },
                       { id: 'clientes', label: 'Base Clientes & GPS', icon: Users },
-                      { id: 'consultas', label: 'Consulta Rutas y Productos', icon: Layers },
+                      { id: 'consultas', label: 'Cierres de Repartidores', icon: FileText },
                       { id: 'cierre', label: 'Cierre General', icon: RotateCcw }
                     ].map(sub => {
                       const Icon = sub.icon;
@@ -1111,13 +1121,13 @@ export default function App() {
                   </div>
                 )}
 
-                {/* MÓDULO UNIFICADO DE CONSULTA DE RUTAS Y PRODUCTOS ASIGNADOS */}
+                {/* MÓDULO DE CONSULTA DE CIERRES ENVIADOS POR REPARTIDORES (LISTADO POR PRODUCTOS Y SUMATORIA FINAL) */}
                 {pcSubTab === 'consultas' && (
                   <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-6">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
                       <div>
-                        <h3 className="text-md font-bold text-amber-400">Módulo de Consulta Unificada: Rutas y Productos Asignados</h3>
-                        <p className="text-xs text-slate-400">Visualiza en tiempo real los despachos activos, rutas y su inventario asignado.</p>
+                        <h3 className="text-md font-bold text-amber-400">Módulo de Consulta: Cierres Enviados por Repartidores</h3>
+                        <p className="text-xs text-slate-400">Listado consolidado de productos vendidos y recaudados en los cierres enviados desde ruta.</p>
                       </div>
                       <button onClick={exportarExcelReporte} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-none text-xs font-bold flex items-center gap-2">
                         <FileSpreadsheet className="w-4 h-4" /> Exportar a Excel
@@ -1125,51 +1135,39 @@ export default function App() {
                     </div>
 
                     <div className="space-y-4">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300">Despachos y Rutas Activas en Tiempo Real</h4>
-                      {carguesDiarios.length === 0 ? (
-                        <p className="text-xs text-slate-500 py-6 text-center bg-slate-950 rounded border border-slate-800">No hay rutas ni productos despachados activos en este momento.</p>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300">Consolidado por Productos (Cierres en Ruta)</h4>
+                      {cierresEnviadosMovil.length === 0 ? (
+                        <p className="text-xs text-slate-500 py-6 text-center bg-slate-950 rounded border border-slate-800">No hay cierres enviados por los repartidores en este momento.</p>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {carguesDiarios.map(c => (
-                            <div key={c.id} className="bg-slate-950 p-4 rounded-none border border-slate-800 space-y-3">
-                              <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                                <div>
-                                  <span className="font-bold text-amber-300">Ruta: {c.rutaNombre}</span>
-                                  <p className="text-[10px] text-slate-400">Responsable: {c.repartidorNombre} ({c.fecha})</p>
-                                </div>
-                                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-none font-semibold">Activa</span>
-                              </div>
-                              <div className="space-y-1.5 pt-1">
-                                <p className="text-[11px] font-bold text-slate-400">Bebidas y Productos Asignados:</p>
-                                {c.items.map((it, idx) => (
-                                  <div key={idx} className="flex justify-between text-xs bg-slate-900 p-2.5 rounded-none border border-slate-800">
-                                    <span className="text-slate-200 font-medium">{it.prodNombre} ({it.presentacion}mL)</span>
-                                    <span className="font-bold text-amber-400">Cargadas: {it.cantidadCargadas} | Stock Actual: {it.cantidadActual}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
+                        <div className="bg-slate-950 p-4 rounded-none border border-slate-800 overflow-x-auto space-y-4">
+                          <table className="w-full text-left text-xs text-slate-300">
+                            <thead className="bg-slate-900 text-slate-400 uppercase">
+                              <tr>
+                                <th className="p-3">Producto / Bebida</th>
+                                <th className="p-3 text-center">Cantidad Total Vendida</th>
+                                <th className="p-3 text-right">Valor Total Recaudado</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800">
+                              {listaProductosCierres.map((item, idx) => (
+                                <tr key={idx} className="hover:bg-slate-900/50">
+                                  <td className="p-3 font-bold text-slate-200">{item.nombre}</td>
+                                  <td className="p-3 text-center font-bold text-amber-400">{item.cantidad} und</td>
+                                  <td className="p-3 text-right font-bold text-emerald-400">${item.total.toLocaleString()} COP</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot className="bg-slate-900 border-t-2 border-amber-500/40 font-bold text-xs">
+                              <tr>
+                                <td className="p-3 text-amber-300">SUMATORIA TOTAL:</td>
+                                <td className="p-3 text-center text-white">{sumatoriaCantidadCierres} und</td>
+                                <td className="p-3 text-right text-emerald-400">${sumatoriaValorCierres.toLocaleString()} COP</td>
+                              </tr>
+                            </tfoot>
+                          </table>
                         </div>
                       )}
                     </div>
-
-                    {cierresEnviadosMovil.length > 0 && (
-                      <div className="bg-slate-950 p-4 rounded-xl border border-emerald-500/30 space-y-3">
-                        <h4 className="text-xs font-bold text-emerald-400 flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4" /> Cierres de Ruta Enviados desde el Móvil
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {cierresEnviadosMovil.map(env => (
-                            <div key={env.idEnvio} className="bg-slate-900 p-3 rounded-none border border-slate-800 text-xs space-y-1">
-                              <p className="font-bold text-amber-300">Vendedor: {env.vendedorNombre}</p>
-                              <p className="text-slate-400">Fecha: {env.fecha}</p>
-                              <p className="text-emerald-400 font-bold">Total Reportado: ${env.totalVendido.toLocaleString()} COP</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
 
