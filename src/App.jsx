@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, MapPin, Truck, ShoppingCart, Database, FileSpreadsheet, 
-  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2, Edit3, CheckCircle, Eye, FileText, Map, Save 
+  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2, Edit3, CheckCircle, Eye, FileText, Map, LogOut 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -9,7 +9,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('pc');
   const [pcSubTab, setPcSubTab] = useState('usuarios');
   
-  // Control de Autenticación Módulo PC (Clave Admin: elmer0585)
+  // Control de Autenticación Módulo PC (Admin clave: elmer0585)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [usuarioActual, setUsuarioActual] = useState(null);
   const [loginEmail, setLoginEmail] = useState('');
@@ -27,32 +27,32 @@ export default function App() {
   const [clienteEditando, setClienteEditando] = useState(null);
   const [productoEditando, setProductoEditando] = useState(null);
 
-  // Base de datos de Usuarios (Admin con clave elmer0585)
+  // Base de datos de Usuarios
   const [usuariosSistema, setUsuariosSistema] = useState([
     { id: 'USR-01', nombre: 'Administrador Principal', email: 'admin@matondi.com', password: 'elmer0585', rol: 'Administrador', vehiculo: 'N/A', estado: 'Activo' },
-    { id: 'USR-02', nombre: 'Carlos Repartidor', email: 'carlos@matondi.com', password: '123', rol: 'Repartidor', vehiculo: 'Camión 1', estado: 'Activo' }
+    { id: 'USR-02', nombre: 'José Arteta Repartidor', email: 'jose@matondi.com', password: '123', rol: 'Repartidor', vehiculo: 'Camión 1', estado: 'Activo' }
   ]);
   const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', password: '', rol: 'Repartidor', vehiculo: '' });
 
   // Rutas y Municipios de Distribución
   const [rutas, setRutas] = useState([
-    { id: 'RUT-01', nombre: 'Ruta Atlántico R1', ciudad: 'Barranquilla', departamento: 'Atlántico', municipios: ['Sabanagrande', 'Santo Tomás', 'Palmar de Varela', 'Ponedera'], googleMaps: 'https://maps.google.com/?q=10.7412,-74.7541', estado: 'Activa' },
+    { id: 'RUT-01', nombre: 'Ruta Atlántico R1', ciudad: 'Barranquilla', departamento: 'Atlántico', municipios: ['Sabanagrande', 'Santo Tomás', 'Palmar de Varela'], googleMaps: 'https://maps.google.com/?q=10.7412,-74.7541', estado: 'Activa' },
     { id: 'RUT-02', nombre: 'Ruta Centro R2', ciudad: 'Barranquilla', departamento: 'Atlántico', municipios: ['Sabanalarga', 'Baranoa', 'Polonuevo'], googleMaps: 'https://maps.google.com/?q=10.6300,-74.9200', estado: 'Activa' },
     { id: 'RUT-03', nombre: 'Ruta Barranquilla & Galapa R3', ciudad: 'Barranquilla', departamento: 'Atlántico', municipios: ['Barranquilla', 'Galapa'], googleMaps: 'https://maps.google.com/?q=10.9960,-74.7800', estado: 'Activa' }
   ]);
   const [nuevaRuta, setNuevaRuta] = useState({ nombre: '', ciudad: 'Barranquilla', departamento: 'Atlántico', municipioInput: '', municipios: [], googleMaps: '' });
 
-  // Base de datos de Clientes con opción de GPS
+  // Base de datos de Clientes
   const [clientes, setClientes] = useState([
     { id: 'CLI-01', nombre: 'Tienda y Granero San Martín', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
     { id: 'CLI-02', nombre: 'Tienda la ventanita', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Cll 12 Kr 3', lat: '', lng: '', estado: 'Pendiente' },
     { id: 'CLI-03', nombre: 'Tienda los trupillos', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-04', nombre: 'Tienda El económico ($1500)', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
+    { id: 'CLI-04', nombre: 'Tienda El económico', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
     { id: 'CLI-05', nombre: 'Tienda las palmeras de la 42', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 42 #7', lat: '', lng: '', estado: 'Pendiente' }
   ]);
-  const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', zona: 'R1', municipio: 'Palmar de Varela', direccion: '', lat: '', lng: '' });
+  const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', zona: 'R1', municipio: 'Sabanagrande', direccion: '', lat: '', lng: '' });
 
-  // Catálogo de Productos editables individualmente
+  // Catálogo de Productos Oficiales (Editables individualmente)
   const [productos, setProductos] = useState([
     { id: 'PROD-01', nombre: 'ARROZ TRADICIONAL', presentacion: '1000', precio: 8000 },
     { id: 'PROD-02', nombre: 'ARROZ KOLA', presentacion: '1000', precio: 8000 },
@@ -61,7 +61,7 @@ export default function App() {
   ]);
   const [nuevoProd, setNuevoProd] = useState({ nombre: '', presentacion: '1000', precio: '' });
 
-  // Cargues Diarios / Inventario de Despachos
+  // Cargues Diarios / Despachos
   const [carguesDiarios, setCarguesDiarios] = useState([]);
   const [cargueForm, setCargueForm] = useState({
     repartidorId: 'USR-02',
@@ -71,8 +71,7 @@ export default function App() {
     dineroManana: 0,
     dineroTarde: 0,
     items: [
-      { prodId: 'PROD-01', cantidadCargadas: 50, cantidadRegresadas: 0, precioUnitario: 8000 },
-      { id: 'PROD-02', cantidadCargadas: 50, cantidadRegresadas: 0, precioUnitario: 8000 }
+      { prodId: 'PROD-01', cantidadCargadas: 50, cantidadRegresadas: 0, precioUnitario: 8000 }
     ]
   });
 
@@ -89,13 +88,12 @@ export default function App() {
   const [prodSel, setProdSel] = useState('');
   const [cantVendida, setCantVendida] = useState(1);
   const [nuevaDeuda, setNuevaDeuda] = useState(0);
-  const [deudaAnterior, setDeudaAnterior] = useState(0);
   const [cambiosItem, setCambiosItem] = useState(0);
   const [muestrasItem, setMuestrasItem] = useState(0);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [motivoNoVenta, setMotivoNoVenta] = useState('');
 
-  // Filtros de Consulta Avanzada
+  // Filtros
   const [filtroMunicipio, setFiltroMunicipio] = useState('');
   const [filtroRepartidor, setFiltroRepartidor] = useState('');
   const [filtroZona, setFiltroZona] = useState('');
@@ -236,14 +234,14 @@ export default function App() {
       id: `CLI-${Date.now()}`,
       nombre: sanitizeStr(nuevoCliente.nombre),
       zona: nuevoCliente.zona,
-      municipio: sanitizeStr(nuevoCliente.municipio || 'Palmar de Varela'),
+      municipio: sanitizeStr(nuevoCliente.municipio || 'Sabanagrande'),
       direccion: sanitizeStr(nuevoCliente.direccion),
       lat: nuevoCliente.lat || '',
       lng: nuevoCliente.lng || '',
       estado: 'Pendiente'
     };
     setClientes([...clientes, cli]);
-    setNuevoCliente({ nombre: '', zona: 'R1', municipio: 'Palmar de Varela', direccion: '', lat: '', lng: '' });
+    setNuevoCliente({ nombre: '', zona: 'R1', municipio: 'Sabanagrande', direccion: '', lat: '', lng: '' });
     setModalAbierto(null);
     alert('Establecimiento registrado con éxito');
   };
@@ -319,7 +317,7 @@ export default function App() {
       repartidorId: cargueForm.repartidorId,
       repartidorNombre: rep.nombre,
       rutaNombre: rutaObj.nombre,
-      municipiosStr: rutaObj.municipios.join(', '),
+      municipiosAsignados: [...rutaObj.municipios],
       combustible: Number(cargueForm.combustible) || 0,
       dineroBase: Number(cargueForm.dineroBase) || 0,
       dineroManana: Number(cargueForm.dineroManana) || 0,
@@ -361,6 +359,12 @@ export default function App() {
     const itemCargue = cargueActivo.items.find(i => i.prodId === prodSel);
     if (!itemCargue || itemCargue.cantidadActual < cantVendida) return alert('Inventario insuficiente en tu vehículo.');
 
+    // Validar si el stock restante llega a 0 y avisar al vendedor
+    const stockRestante = itemCargue.cantidadActual - Number(cantVendida);
+    if (stockRestante === 0) {
+      alert(`⚠️ AVISO: Se ha terminado el stock de ${itemCargue.prodNombre} en el vehículo.`);
+    }
+
     const precioVenta = itemCargue.precioUnitario || prod.precio;
     const nuevaVenta = {
       id: `VEN-${Date.now()}`,
@@ -374,7 +378,6 @@ export default function App() {
       prodNombre: prod.nombre,
       cantidad: Number(cantVendida),
       nuevaDeuda: Number(nuevaDeuda) || 0,
-      deudaAnterior: Number(deudaAnterior) || 0,
       cambios: Number(cambiosItem) || 0,
       muestras: Number(muestrasItem) || 0,
       precio: precioVenta,
@@ -390,7 +393,7 @@ export default function App() {
       if (c.id === cargueActivo.id) {
         return {
           ...c,
-          items: c.items.map(i => i.prodId === prodSel ? { ...i, cantidadActual: i.cantidadActual - Number(cantVendida) } : i)
+          items: c.items.map(i => i.prodId === prodSel ? { ...i, cantidadActual: stockRestante } : i)
         };
       }
       return c;
@@ -399,7 +402,6 @@ export default function App() {
     setClientes(clientes.map(c => c.id === clienteSel ? { ...c, estado: 'Visitado' } : c));
     setCantVendida(1);
     setNuevaDeuda(0);
-    setDeudaAnterior(0);
     setCambiosItem(0);
     setMuestrasItem(0);
     alert('Venta registrada correctamente');
@@ -469,7 +471,10 @@ export default function App() {
   });
 
   const cargueMovilActivo = mobileUser ? carguesDiarios.find(c => c.repartidorId === mobileUser.id || c.repartidorNombre.toLowerCase() === mobileUser.nombre.toLowerCase()) : null;
-  const clientesFiltradosMovil = clientes.filter(c => municipioSel ? c.municipio.toLowerCase() === municipioSel.toLowerCase() : false);
+  
+  // Municipios disponibles estrictamente asignados a la ruta del repartidor móvil
+  const municipiosRutaMovil = cargueMovilActivo ? (rutas.find(r => r.nombre === cargueMovilActivo.rutaNombre)?.municipios || []) : [];
+  const clientesFiltradosMovil = clientes.filter(c => municipioSel ? (c.municipio.toLowerCase() === municipioSel.toLowerCase() && municipiosRutaMovil.map(m => m.toLowerCase()).includes(c.municipio.toLowerCase())) : false);
   const productosMovilDisponibles = cargueMovilActivo ? cargueMovilActivo.items.filter(i => i.cantidadActual > 0) : [];
 
   return (
@@ -493,8 +498,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* ENCABEZADO GENERAL */}
-      <header className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center bg-slate-900 border border-amber-900/40 p-4 rounded-xl mb-6 shadow-2xl">
+      {/* ENCABEZADO GENERAL CON BOTONES ESTILO CUADRADO (WINDOWS - GRIS / LOGO COLOR / LETRAS AMARILLAS) Y BOTÓN CERRAR SESIÓN PEQUEÑO EN ESQUINA */}
+      <header className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center bg-slate-900 border border-amber-900/40 p-4 rounded-xl mb-6 shadow-2xl relative">
         <div className="flex items-center gap-3 mb-4 md:mb-0">
           <div className="bg-amber-600/20 p-2.5 rounded-xl border border-amber-500/30">
             <Database className="w-7 h-7 text-amber-500" />
@@ -506,18 +511,30 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Botones de inicio estilo cuadrado Windows */}
           <button 
             onClick={() => setActiveTab('pc')}
-            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'pc' ? 'bg-amber-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+            className={`px-4 py-2.5 rounded-none border border-slate-700 font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'pc' ? 'bg-slate-700 shadow-inner' : 'bg-slate-800 hover:bg-slate-700'} text-amber-400`}
           >
-            <Users className="w-4 h-4" /> Panel PC (Admin)
+            <Users className="w-4 h-4 text-amber-500" /> Panel PC (Admin)
           </button>
           <button 
             onClick={() => setActiveTab('mobile')}
-            className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'mobile' ? 'bg-emerald-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
+            className={`px-4 py-2.5 rounded-none border border-slate-700 font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'mobile' ? 'bg-slate-700 shadow-inner' : 'bg-slate-800 hover:bg-slate-700'} text-amber-400`}
           >
-            <Truck className="w-4 h-4" /> Vendedor Móvil
+            <Truck className="w-4 h-4 text-emerald-400" /> Vendedor Móvil
           </button>
+
+          {/* Botón cerrar sesión pequeño en la esquina */}
+          {(isLoggedIn || isMobileLoggedIn) && (
+            <button 
+              onClick={isLoggedIn ? cerrarSesion : cerrarSesionMovil}
+              className="bg-red-900/40 border border-red-500/40 text-red-300 hover:bg-red-900/60 p-1.5 rounded-none text-[10px] font-bold flex items-center gap-1 ml-4"
+              title="Cerrar Sesión"
+            >
+              <LogOut className="w-3 h-3" /> Salir
+            </button>
+          )}
         </div>
       </header>
 
@@ -585,16 +602,13 @@ export default function App() {
                         <button
                           key={sub.id}
                           onClick={() => setPcSubTab(sub.id)}
-                          className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${pcSubTab === sub.id ? 'bg-amber-600/20 text-amber-400 border border-amber-500/40' : 'bg-slate-900 text-slate-400 hover:text-slate-200'}`}
+                          className={`px-3 py-2 rounded-none border border-slate-800 text-xs font-bold transition-all flex items-center gap-1.5 ${pcSubTab === sub.id ? 'bg-slate-700 text-amber-400 border-amber-500/40' : 'bg-slate-900 text-slate-400 hover:text-slate-200'}`}
                         >
-                          <Icon className="w-4 h-4" /> {sub.label}
+                          <Icon className="w-4 h-4 text-amber-400" /> {sub.label}
                         </button>
                       );
                     })}
                   </div>
-                  <button onClick={cerrarSesion} className="text-xs bg-red-600/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-600/30">
-                    Cerrar Sesión
-                  </button>
                 </div>
 
                 {/* GESTIÓN DE USUARIOS */}
@@ -602,7 +616,7 @@ export default function App() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h3 className="text-sm font-bold text-amber-400">Directorio de Empleados y Accesos</h3>
-                      <button onClick={() => setModalAbierto('usuario')} className="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
+                      <button onClick={() => setModalAbierto('usuario')} className="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-none text-xs font-bold flex items-center gap-2">
                         <Plus className="w-4 h-4" /> Registrar Nuevo Usuario
                       </button>
                     </div>
@@ -631,7 +645,7 @@ export default function App() {
                                   </span>
                                 </td>
                                 <td className="p-3">
-                                  <button onClick={() => alternarEstadoUsuario(u.id)} className="text-[10px] px-2 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded">
+                                  <button onClick={() => alternarEstadoUsuario(u.id)} className="text-[10px] px-2 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-none">
                                     {u.estado === 'Activo' ? 'Desactivar' : 'Activar'}
                                   </button>
                                 </td>
@@ -649,7 +663,7 @@ export default function App() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h3 className="text-sm font-bold text-amber-400">Gestión de Rutas de Distribución</h3>
-                      <button onClick={() => setModalAbierto('ruta')} className="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
+                      <button onClick={() => setModalAbierto('ruta')} className="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-none text-xs font-bold flex items-center gap-2">
                         <Plus className="w-4 h-4" /> Crear Nueva Ruta
                       </button>
                     </div>
@@ -682,10 +696,10 @@ export default function App() {
                                   </span>
                                 </td>
                                 <td className="p-3 flex gap-2">
-                                  <button onClick={() => { setRutaEditando(r); setModalAbierto('editarRuta'); }} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded" title="Modificar Ruta">
+                                  <button onClick={() => { setRutaEditando(r); setModalAbierto('editarRuta'); }} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-none" title="Modificar Ruta">
                                     <Edit3 className="w-3.5 h-3.5" />
                                   </button>
-                                  <button onClick={() => cambiarEstadoRuta(r.id)} className={`text-[10px] px-2 py-1 rounded font-bold ${r.estado === 'Activa' ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30' : 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30'}`}>
+                                  <button onClick={() => cambiarEstadoRuta(r.id)} className={`text-[10px] px-2 py-1 rounded-none font-bold ${r.estado === 'Activa' ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30' : 'bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30'}`}>
                                     {r.estado === 'Activa' ? 'Desactivar' : 'Activar'}
                                   </button>
                                 </td>
@@ -775,13 +789,13 @@ export default function App() {
                       <div className="border-t border-slate-800 pt-3 space-y-3">
                         <div className="flex justify-between items-center">
                           <label className="text-xs font-bold text-amber-300">Productos (Cargadas / Regresadas)</label>
-                          <button onClick={agregarItemCargueForm} className="text-[10px] bg-amber-600/30 text-amber-400 border border-amber-500/40 px-2 py-1 rounded font-semibold hover:bg-amber-600/50">
+                          <button onClick={agregarItemCargueForm} className="text-[10px] bg-amber-600/30 text-amber-400 border border-amber-500/40 px-2 py-1 rounded-none font-semibold hover:bg-amber-600/50">
                             + Ítem Producto
                           </button>
                         </div>
 
                         {cargueForm.items.map((item, idx) => (
-                          <div key={idx} className="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2 relative">
+                          <div key={idx} className="bg-slate-950 p-3 rounded-none border border-slate-800 space-y-2 relative">
                             <div className="flex justify-between items-center">
                               <select 
                                 value={item.prodId}
@@ -833,7 +847,7 @@ export default function App() {
                         ))}
                       </div>
 
-                      <button onClick={registrarCargueDia} className="w-full bg-amber-600 hover:bg-amber-500 py-2.5 rounded text-xs font-bold text-white shadow-lg">
+                      <button onClick={registrarCargueDia} className="w-full bg-amber-600 hover:bg-amber-500 py-2.5 rounded-none text-xs font-bold text-white shadow-lg">
                         Generar Despacho Oficial
                       </button>
                     </div>
@@ -888,20 +902,20 @@ export default function App() {
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {carguesDiarios.map(c => (
-                            <div key={c.id} className="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-3">
+                            <div key={c.id} className="bg-slate-950 p-4 rounded-none border border-slate-800 space-y-3">
                               <div className="flex justify-between items-center border-b border-slate-800 pb-2">
                                 <div>
                                   <span className="font-bold text-amber-300">{c.repartidorNombre}</span>
                                   <p className="text-[10px] text-slate-400">Fecha: {c.fecha}</p>
                                 </div>
-                                <span className="text-[10px] bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded font-semibold">{c.rutaNombre}</span>
+                                <span className="text-[10px] bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded-none font-semibold">{c.rutaNombre}</span>
                               </div>
                               <div className="space-y-1.5 pt-1">
                                 <p className="text-[11px] font-bold text-slate-400">Control de Productos en Vehículo:</p>
                                 {c.items.map((it, idx) => (
-                                  <div key={idx} className="flex justify-between text-xs bg-slate-900 p-2 rounded">
+                                  <div key={idx} className="flex justify-between text-xs bg-slate-900 p-2 rounded-none">
                                     <span className="text-slate-200">{it.prodNombre} ({it.presentacion}mL)</span>
-                                    <span className="font-bold text-amber-400">Stock Actual: {it.cantidadActual} / Salida: {it.totalSalida}</span>
+                                    <span className="font-bold text-amber-400">Stock: {it.cantidadActual} / Salida: {it.totalSalida}</span>
                                   </div>
                                 ))}
                               </div>
@@ -964,7 +978,7 @@ export default function App() {
                           <option value="CUENTA">Cuenta / Transferencia</option>
                         </select>
                       </div>
-                      <button onClick={registrarGastoRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-2.5 rounded text-xs font-bold text-white shadow-lg">
+                      <button onClick={registrarGastoRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-2.5 rounded-none text-xs font-bold text-white shadow-lg">
                         Guardar Gasto
                       </button>
                     </div>
@@ -1006,13 +1020,13 @@ export default function App() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h3 className="text-sm font-bold text-amber-400">Catálogo Oficial de Productos (Editables Individualmente)</h3>
-                      <button onClick={() => setModalAbierto('producto')} className="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
+                      <button onClick={() => setModalAbierto('producto')} className="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-none text-xs font-bold flex items-center gap-2">
                         <Plus className="w-4 h-4" /> Agregar Producto
                       </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {productos.map(p => (
-                        <div key={p.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                        <div key={p.id} className="bg-slate-900 p-4 rounded-none border border-slate-800 flex justify-between items-center">
                           <div className="space-y-1">
                             <p className="font-bold text-slate-100">{p.nombre}</p>
                             <p className="text-[11px] text-slate-400">Presentación: {p.presentacion} mL</p>
@@ -1020,7 +1034,7 @@ export default function App() {
                           </div>
                           <button 
                             onClick={() => { setProductoEditando(p); setModalAbierto('editarProducto'); }}
-                            className="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2 rounded-lg border border-slate-700 text-xs font-bold flex items-center gap-1"
+                            className="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2 rounded-none border border-slate-700 text-xs font-bold flex items-center gap-1"
                           >
                             <Edit3 className="w-3.5 h-3.5" /> Editar
                           </button>
@@ -1035,7 +1049,7 @@ export default function App() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <h3 className="text-sm font-bold text-amber-400">Base de Datos de Establecimientos Oficiales con Opción GPS</h3>
-                      <button onClick={() => setModalAbierto('cliente')} className="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
+                      <button onClick={() => setModalAbierto('cliente')} className="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-none text-xs font-bold flex items-center gap-2">
                         <Plus className="w-4 h-4" /> Nuevo Establecimiento
                       </button>
                     </div>
@@ -1067,7 +1081,7 @@ export default function App() {
                                 <td className="p-3">
                                   <button 
                                     onClick={() => { setClienteEditando(c); setModalAbierto('geoCliente'); }}
-                                    className="bg-sky-600/20 text-sky-400 px-2.5 py-1 rounded text-[10px] font-bold border border-sky-500/30 flex items-center gap-1"
+                                    className="bg-sky-600/20 text-sky-400 px-2.5 py-1 rounded-none text-[10px] font-bold border border-sky-500/30 flex items-center gap-1"
                                   >
                                      Asignar GPS
                                   </button>
@@ -1089,7 +1103,7 @@ export default function App() {
                         <h3 className="text-md font-bold text-amber-400">Módulo de Cierres, Liquidación y Reportes</h3>
                         <p className="text-xs text-slate-400">Informes de ventas totales por producto, liquidadas por vendedor.</p>
                       </div>
-                      <button onClick={exportarExcelReporte} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
+                      <button onClick={exportarExcelReporte} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-none text-xs font-bold flex items-center gap-2">
                         <FileSpreadsheet className="w-4 h-4" /> Exportar a Excel
                       </button>
                     </div>
@@ -1101,7 +1115,7 @@ export default function App() {
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {cierresEnviadosMovil.map(env => (
-                            <div key={env.idEnvio} className="bg-slate-900 p-3 rounded-lg border border-slate-800 text-xs space-y-1">
+                            <div key={env.idEnvio} className="bg-slate-900 p-3 rounded-none border border-slate-800 text-xs space-y-1">
                               <p className="font-bold text-amber-300">Vendedor: {env.vendedorNombre}</p>
                               <p className="text-slate-400">Fecha: {env.fecha}</p>
                               <p className="text-emerald-400 font-bold">Total Reportado: ${env.totalVendido.toLocaleString()} COP</p>
@@ -1176,7 +1190,7 @@ export default function App() {
                         Archiva las ventas activas, limpia el inventario en ruta y genera el consolidado total de la operación.
                       </p>
                     </div>
-                    <button onClick={ejecutarCierreGeneral} className="bg-amber-600 hover:bg-amber-500 px-8 py-3 rounded-lg text-sm font-bold shadow-lg text-white transition-all">
+                    <button onClick={ejecutarCierreGeneral} className="bg-amber-600 hover:bg-amber-500 px-8 py-3 rounded-none text-xs font-bold text-white shadow-lg transition-all">
                       Ejecutar Cierre General de Operaciones
                     </button>
                   </div>
@@ -1229,7 +1243,7 @@ export default function App() {
                 <p className="text-xs text-slate-400">
                   Hola <strong>{mobileUser?.nombre}</strong>, no tienes un despacho de ruta activo asignado para hoy.
                 </p>
-                <button onClick={cerrarSesionMovil} className="bg-slate-800 px-4 py-2 rounded text-xs text-amber-400 font-bold">
+                <button onClick={cerrarSesionMovil} className="bg-slate-800 px-4 py-2 rounded-none text-xs text-amber-400 font-bold">
                   Cerrar Sesión
                 </button>
               </div>
@@ -1243,19 +1257,18 @@ export default function App() {
                     <p className="text-[11px] text-amber-400">Ruta: {cargueMovilActivo.rutaNombre}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => setModalAbierto('verVentasMovil')} className="text-[10px] bg-sky-600/20 text-sky-400 px-2.5 py-1 rounded font-bold flex items-center gap-1">
+                    <button onClick={() => setModalAbierto('verVentasMovil')} className="text-[10px] bg-sky-600/20 text-sky-400 px-2 py-1 rounded-none font-bold flex items-center gap-1">
                       <Eye className="w-3 h-3" /> Ver Ventas
                     </button>
-                    <button onClick={enviarCierreMovil} className="text-[10px] bg-amber-600/20 text-amber-400 px-2.5 py-1 rounded font-bold flex items-center gap-1">
+                    <button onClick={enviarCierreMovil} className="text-[10px] bg-amber-600/20 text-amber-400 px-2 py-1 rounded-none font-bold flex items-center gap-1">
                       <Send className="w-3 h-3" /> Enviar Cierre
                     </button>
-                    <button onClick={cerrarSesionMovil} className="text-[10px] bg-red-600/20 text-red-400 px-2 py-1 rounded">Salir</button>
                   </div>
                 </div>
 
-                {/* 1. SELECCIONAR MUNICIPIO */}
+                {/* 1. SELECCIONAR MUNICIPIO (Restringido estrictamente a los agregados en la ruta) */}
                 <div>
-                  <label className="text-xs text-slate-400 mb-1 block">1. Seleccionar Municipio</label>
+                  <label className="text-xs text-slate-400 mb-1 block">1. Seleccionar Municipio (Asignado a tu Ruta)</label>
                   <select 
                     value={municipioSel} 
                     onChange={e => {
@@ -1265,7 +1278,7 @@ export default function App() {
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200"
                   >
                     <option value="">-- Seleccionar Municipio --</option>
-                    {Array.from(new Set(clientes.map(c => c.municipio))).map((mun, idx) => (
+                    {municipiosRutaMovil.map((mun, idx) => (
                       <option key={idx} value={mun}>{mun}</option>
                     ))}
                   </select>
@@ -1336,15 +1349,15 @@ export default function App() {
                     </select>
                   </div>
 
-                  <button onClick={registrarVenta} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg text-sm font-bold shadow-lg transition-colors flex items-center justify-center gap-2">
+                  <button onClick={registrarVenta} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-none text-xs font-bold shadow-lg transition-colors flex items-center justify-center gap-2">
                     <Send className="w-4 h-4" /> Registrar Ítem Formato Ruta
                   </button>
                 </div>
 
                 <div className="border-t border-slate-800 pt-4 space-y-2">
                   <label className="text-xs text-slate-400 block">¿No fue posible realizar la visita?</label>
-                  <input type="text" placeholder="Motivo (ej. Local cerrado)" value={motivoNoVenta} onChange={e => setMotivoNoVenta(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200" />
-                  <button onClick={registrarNoVenta} className="w-full bg-amber-600/30 text-amber-400 border border-amber-500/40 py-2 rounded-lg text-xs font-semibold">
+                  <input type="text" placeholder="Motivo (ej. Local cerrado)" value={motivoNoVenta} onChange={e => setMotivoNoVenta(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200" />
+                  <button onClick={registrarNoVenta} className="w-full bg-amber-600/30 text-amber-400 border border-amber-500/40 py-2 rounded-none text-xs font-semibold">
                     Registrar No Venta
                   </button>
                 </div>
@@ -1354,19 +1367,18 @@ export default function App() {
         )}
       </main>
 
-      {/* VENTANAS EMERGENTES (MODALES) 100% ESTILO MATONDI */}
+      {/* VENTANAS EMERGENTES (MODALES) */}
       {modalAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
-          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4 animate-in fade-in zoom-in duration-200">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-none max-w-lg w-full p-6 shadow-2xl relative space-y-4">
             
             <button 
               onClick={() => { setModalAbierto(null); setRutaEditando(null); setClienteEditando(null); setProductoEditando(null); }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 bg-slate-800 p-1.5 rounded-lg border border-slate-700 transition-colors"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 bg-slate-800 p-1.5 rounded-none border border-slate-700"
             >
               <X className="w-4 h-4" />
             </button>
 
-            {/* MODAL: CREAR RUTA */}
             {modalAbierto === 'ruta' && (
               <div className="space-y-4">
                 <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
@@ -1391,11 +1403,11 @@ export default function App() {
                     <label className="text-xs text-slate-400 block mb-1">Agregar Municipios</label>
                     <div className="flex gap-2">
                       <input type="text" value={nuevaRuta.municipioInput} onChange={e => setNuevaRuta({ ...nuevaRuta, municipioInput: e.target.value })} placeholder="Ej. Sabanagrande" className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200" />
-                      <button onClick={agregarMunicipioANuevaRuta} className="bg-amber-600 px-3 py-2 rounded text-xs font-bold text-white">Añadir</button>
+                      <button onClick={agregarMunicipioANuevaRuta} className="bg-amber-600 px-3 py-2 rounded-none text-xs font-bold text-white">Añadir</button>
                     </div>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {nuevaRuta.municipios.map((m, i) => (
-                        <span key={i} className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">{m}</span>
+                        <span key={i} className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-none border border-amber-500/30">{m}</span>
                       ))}
                     </div>
                   </div>
@@ -1404,13 +1416,12 @@ export default function App() {
                     <input type="text" value={nuevaRuta.googleMaps} onChange={e => setNuevaRuta({ ...nuevaRuta, googleMaps: e.target.value })} placeholder="https://maps.google.com/?q=..." className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                 </div>
-                <button onClick={agregarRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
+                <button onClick={agregarRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
                   Guardar y Registrar Ruta
                 </button>
               </div>
             )}
 
-            {/* MODAL: EDITAR RUTA */}
             {modalAbierto === 'editarRuta' && rutaEditando && (
               <div className="space-y-4">
                 <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
@@ -1436,13 +1447,12 @@ export default function App() {
                     <input type="text" value={rutaEditando.googleMaps} onChange={e => setRutaEditando({ ...rutaEditando, googleMaps: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                 </div>
-                <button onClick={guardarEdicionRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
+                <button onClick={guardarEdicionRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
                   Actualizar Cambios de Ruta
                 </button>
               </div>
             )}
 
-            {/* MODAL: EDITAR PRODUCTO INDIVIDUALMENTE */}
             {modalAbierto === 'editarProducto' && productoEditando && (
               <div className="space-y-4">
                 <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
@@ -1462,13 +1472,12 @@ export default function App() {
                     <input type="number" value={productoEditando.precio} onChange={e => setProductoEditando({ ...productoEditando, precio: Number(e.target.value) })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                 </div>
-                <button onClick={guardarEdicionProducto} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
+                <button onClick={guardarEdicionProducto} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
                   Guardar Cambios de Producto
                 </button>
               </div>
             )}
 
-            {/* MODAL: ASIGNAR GPS A CLIENTE */}
             {modalAbierto === 'geoCliente' && clienteEditando && (
               <div className="space-y-4">
                 <h3 className="text-md font-bold text-sky-400 flex items-center gap-2">
@@ -1490,13 +1499,12 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-                <button onClick={guardarGeolocalizacionCliente} className="w-full bg-sky-600 hover:bg-sky-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
+                <button onClick={guardarGeolocalizacionCliente} className="w-full bg-sky-600 hover:bg-sky-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
                   Guardar Coordenadas GPS
                 </button>
               </div>
             )}
 
-            {/* MODAL: VER VENTAS DESDE MÓVIL */}
             {modalAbierto === 'verVentasMovil' && mobileUser && (
               <div className="space-y-4 max-h-[80vh] overflow-y-auto">
                 <h3 className="text-md font-bold text-emerald-400 flex items-center gap-2">
@@ -1507,7 +1515,7 @@ export default function App() {
                     <p className="text-xs text-slate-400 text-center py-6">No has registrado ventas todavía en esta sesión.</p>
                   ) : (
                     ventas.filter(v => v.vendedorId === mobileUser.id).map(v => (
-                      <div key={v.id} className="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs flex justify-between items-center">
+                      <div key={v.id} className="bg-slate-950 p-3 rounded-none border border-slate-800 text-xs flex justify-between items-center">
                         <div>
                           <p className="font-bold text-slate-200">{v.clienteNombre} ({v.municipio})</p>
                           <p className="text-[11px] text-slate-400">{v.prodNombre} x {v.cantidad} und ({v.metodo})</p>
@@ -1520,7 +1528,7 @@ export default function App() {
                     ))
                   )}
                 </div>
-                <button onClick={() => setModalAbierto(null)} className="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-lg text-xs font-bold text-slate-200">
+                <button onClick={() => setModalAbierto(null)} className="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-none text-xs font-bold text-slate-200">
                   Cerrar Ventana
                 </button>
               </div>
@@ -1534,24 +1542,24 @@ export default function App() {
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Nombre del Establecimiento</label>
-                    <input type="text" value={nuevoCliente.nombre} onChange={e => setNuevoCliente({ ...nuevoCliente, nombre: e.target.value })} placeholder="Tienda Ejemplo" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    <input type="text" value={nuevoCliente.nombre} onChange={e => setNuevoCliente({ ...nuevoCliente, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-xs text-slate-400 block mb-1">Zona / Ruta</label>
-                      <input type="text" value={nuevoCliente.zona} onChange={e => setNuevoCliente({ ...nuevoCliente, zona: e.target.value })} placeholder="R1" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                      <input type="text" value={nuevoCliente.zona} onChange={e => setNuevoCliente({ ...nuevoCliente, zona: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                     </div>
                     <div>
                       <label className="text-xs text-slate-400 block mb-1">Municipio</label>
-                      <input type="text" value={nuevoCliente.municipio} onChange={e => setNuevoCliente({ ...nuevoCliente, municipio: e.target.value })} placeholder="Sabanagrande" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                      <input type="text" value={nuevoCliente.municipio} onChange={e => setNuevoCliente({ ...nuevoCliente, municipio: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                     </div>
                   </div>
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Dirección / Referencia</label>
-                    <input type="text" value={nuevoCliente.direccion} onChange={e => setNuevoCliente({ ...nuevoCliente, direccion: e.target.value })} placeholder="Calle 12 # 3-45" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    <input type="text" value={nuevoCliente.direccion} onChange={e => setNuevoCliente({ ...nuevoCliente, direccion: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                 </div>
-                <button onClick={agregarCliente} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
+                <button onClick={agregarCliente} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
                   Guardar Establecimiento
                 </button>
               </div>
@@ -1589,7 +1597,7 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-                <button onClick={agregarUsuarioSistema} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
+                <button onClick={agregarUsuarioSistema} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
                   Guardar Empleado
                 </button>
               </div>
@@ -1603,18 +1611,18 @@ export default function App() {
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Nombre del Producto</label>
-                    <input type="text" value={nuevoProd.nombre} onChange={e => setNuevoProd({ ...nuevoProd, nombre: e.target.value })} placeholder="Ej. ARROZ TRADICIONAL" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    <input type="text" value={nuevoProd.nombre} onChange={e => setNuevoProd({ ...nuevoProd, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Presentación (mL)</label>
-                    <input type="text" value={nuevoProd.presentacion} onChange={e => setNuevoProd({ ...nuevoProd, presentacion: e.target.value })} placeholder="1000" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    <input type="text" value={nuevoProd.presentacion} onChange={e => setNuevoProd({ ...nuevoProd, presentacion: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Precio Unitario (COP)</label>
-                    <input type="number" value={nuevoProd.precio} onChange={e => setNuevoProd({ ...nuevoProd, precio: e.target.value })} placeholder="8000" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                    <input type="number" value={nuevoProd.precio} onChange={e => setNuevoProd({ ...nuevoProd, precio: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
                   </div>
                 </div>
-                <button onClick={agregarProducto} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
+                <button onClick={agregarProducto} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
                   Registrar Producto
                 </button>
               </div>
