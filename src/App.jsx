@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, MapPin, Truck, ShoppingCart, Database, FileSpreadsheet, 
-  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2, Edit3, CheckCircle, Eye, FileText, Map 
+  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2, Edit3, CheckCircle, Eye, FileText, Map, Save 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -9,7 +9,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('pc');
   const [pcSubTab, setPcSubTab] = useState('usuarios');
   
-  // Control de Autenticación Módulo PC
+  // Control de Autenticación Módulo PC (Clave Admin: elmer0585)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [usuarioActual, setUsuarioActual] = useState(null);
   const [loginEmail, setLoginEmail] = useState('');
@@ -25,10 +25,11 @@ export default function App() {
   const [modalAbierto, setModalAbierto] = useState(null); 
   const [rutaEditando, setRutaEditando] = useState(null);
   const [clienteEditando, setClienteEditando] = useState(null);
+  const [productoEditando, setProductoEditando] = useState(null);
 
-  // Base de datos de Usuarios
+  // Base de datos de Usuarios (Admin con clave elmer0585)
   const [usuariosSistema, setUsuariosSistema] = useState([
-    { id: 'USR-01', nombre: 'Administrador Principal', email: 'admin@matondi.com', password: '123', rol: 'Administrador', vehiculo: 'N/A', estado: 'Activo' },
+    { id: 'USR-01', nombre: 'Administrador Principal', email: 'admin@matondi.com', password: 'elmer0585', rol: 'Administrador', vehiculo: 'N/A', estado: 'Activo' },
     { id: 'USR-02', nombre: 'Carlos Repartidor', email: 'carlos@matondi.com', password: '123', rol: 'Repartidor', vehiculo: 'Camión 1', estado: 'Activo' }
   ]);
   const [nuevoUsuario, setNuevoUsuario] = useState({ nombre: '', email: '', password: '', rol: 'Repartidor', vehiculo: '' });
@@ -41,178 +42,17 @@ export default function App() {
   ]);
   const [nuevaRuta, setNuevaRuta] = useState({ nombre: '', ciudad: 'Barranquilla', departamento: 'Atlántico', municipioInput: '', municipios: [], googleMaps: '' });
 
-  // Base de datos completa de Clientes basada en los formatos físicos oficiales con opción de coordenadas GPS
+  // Base de datos de Clientes con opción de GPS
   const [clientes, setClientes] = useState([
-    // Sabanagrande
     { id: 'CLI-01', nombre: 'Tienda y Granero San Martín', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
     { id: 'CLI-02', nombre: 'Tienda la ventanita', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Cll 12 Kr 3', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-03', nombre: 'Tienda Hermanos castros', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-04', nombre: 'Tienda el rodandero', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-05', nombre: 'Autoservicios el oriente #2', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-06', nombre: 'Distribuciones el oriente', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-07', nombre: 'Copias Santa Rita', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-08', nombre: 'Fruver del campo', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-09', nombre: 'Panadería el oriente ($1500)', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-10', nombre: 'Casa Cerca a ecoparque', municipio: 'Sabanagrande', zona: 'R1', direccion: 'Ecoparque', lat: '', lng: '', estado: 'Pendiente' },
-    // Santo Tomás
-    { id: 'CLI-11', nombre: 'Tienda el comunero las palmeras', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-12', nombre: 'Lavadero san francisco', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-13', nombre: 'Lavadero Car Elite', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-14', nombre: 'Asadero don rico pollo', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-15', nombre: 'Tienda el barquito', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-16', nombre: 'Autoservicio el oriental', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-17', nombre: 'Panadería Alí Pan', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-18', nombre: 'Droguería Natalia', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-19', nombre: 'Droguería San Francisco', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-20', nombre: 'Fruver autoservicio la villa', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-21', nombre: 'Tienda y granero don Ivan', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-22', nombre: 'Tienda el recreo', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-23', nombre: 'Tienda el oriente (diagonal Nueva eps)', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Diagonal Nueva EPS', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-24', nombre: 'Tienda la esperanza', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-25', nombre: 'Asadero pollos crock', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-26', nombre: 'Asadero cristo Rey', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-27', nombre: 'Tienda la independencia', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-28', nombre: 'Tienda los cocos', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-29', nombre: 'Tienda el mundial', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-30', nombre: 'Tienda la bendición de Dios las casitas', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Las Casitas', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-31', nombre: 'Tienda el esfuerzo', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-32', nombre: 'Tienda el negro', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-33', nombre: 'Tienda la rosa del saron', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-34', nombre: 'Tienda rochi', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-35', nombre: 'Tienda nueva granada', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-36', nombre: 'Autoservicio cachacho Juan', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-37', nombre: 'Tienda el lucero', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-38', nombre: 'Tienda el milagroso', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-39', nombre: 'Restaurante nicol', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-40', nombre: 'Tienda María Auxiliadora', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Calle 3 carrera 4-05', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-41', nombre: 'Tienda la mano de dios 1 de mayo', municipio: 'Santo Tomás', zona: 'R1', direccion: '1 de Mayo', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-42', nombre: 'Tienda La Bendición de Dios', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-43', nombre: 'Tienda la cruz (visitar)', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-44', nombre: 'Tienda el buen precio', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-45', nombre: 'Autoservicio mercapuskin', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-46', nombre: 'Hermana Nilda – las casitas', municipio: 'Santo Tomás', zona: 'R1', direccion: 'Las Casitas', lat: '', lng: '', estado: 'Pendiente' },
-    // Palmar de Varela
-    { id: 'CLI-47', nombre: 'Tienda los trupillos', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-48', nombre: 'Tienda El económico ($1500)', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-49', nombre: 'Tienda el diamante', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'A la vuelta del económico', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-50', nombre: 'Tienda La Reina', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-51', nombre: 'Tienda el Carmen', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Boulevard Virgencita', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-52', nombre: 'Tienda el punto nuevo', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-53', nombre: 'Tienda merka pollo', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-54', nombre: 'Tienda el peso menos', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-55', nombre: 'Tienda la primavera', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-56', nombre: 'Tienda abastos Santander', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-57', nombre: 'Tienda Lauri', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-58', nombre: 'Tienda las palmas', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-59', nombre: 'Tienda las flores #2', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-60', nombre: 'Tienda el paisa', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-61', nombre: 'Tienda oasis', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-62', nombre: 'Tienda la esmeralda', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-63', nombre: 'Tienda Ingri', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-64', nombre: 'Granero san Juan', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-65', nombre: 'Tienda la 16', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    // Ponedera
-    { id: 'CLI-66', nombre: 'Marque expres la 14', municipio: 'Ponedera', zona: 'R1', direccion: 'La 14', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-67', nombre: 'Tienda Barú', municipio: 'Ponedera', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-68', nombre: 'Tienda el porvenir', municipio: 'Ponedera', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-69', nombre: 'Tienda el renacer paisa', municipio: 'Ponedera', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-70', nombre: 'Tienda La Estación', municipio: 'Ponedera', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-71', nombre: 'Tienda Renacer', municipio: 'Ponedera', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-72', nombre: 'Panadería y Heladería el', municipio: 'Ponedera', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    // Sabanalarga
-    { id: 'CLI-73', nombre: 'El conjunto', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-74', nombre: 'Tienda el señor Luis', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-75', nombre: 'Panadería el reposo', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Calle 18 #24-09', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-76', nombre: 'Tienda san gil', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Carrera 18 #19-14', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-77', nombre: 'Panadería pastel pan', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Calle 21 cra 19B local 1', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-78', nombre: 'Tienda panadería el peso menos', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Calle 18 #9-60', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-79', nombre: 'Panadería dulce pan', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Calle 19 #5A-13', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-80', nombre: 'Tienda el Bulling', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-81', nombre: 'Tienda El Porvenir', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-82', nombre: 'Tienda san miguel', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Calle 2 #17-39', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-83', nombre: 'Tienda la gran parada', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Calle 19 #04-114', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-84', nombre: 'Panadería belén', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Calle 9 #20-02', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-85', nombre: 'Tienda el Carmen', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Carrera 9 #20B-26', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-86', nombre: 'Tienda la esperanza', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Carrera 9 Calle 22', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-87', nombre: 'Tienda el paisa 4', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Calle 23 #15-9', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-88', nombre: 'Tienda San Miguel esquina', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Esquina', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-89', nombre: 'Tienda los paisas 2', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Carrera 14 #25-14', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-90', nombre: 'Distribuciones central', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Calle 26 #24-80', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-91', nombre: 'Tienda la esperanza 27', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Calle 27 #22C-35', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-92', nombre: 'Restaurante Colombia mía', municipio: 'Sabanalarga', zona: 'R2', direccion: 'Calle 27 #22C-60', lat: '', lng: '', estado: 'Pendiente' },
-    // Baranoa
-    { id: 'CLI-93', nombre: 'Tienda Estrella del Oriente', municipio: 'Baranoa', zona: 'R2', direccion: 'Calle 15B trans 25A esq', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-94', nombre: 'Tienda Tornazol', municipio: 'Baranoa', zona: 'R2', direccion: 'Cll 15 # 24B-02', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-95', nombre: 'Tienda el brillante', municipio: 'Baranoa', zona: 'R2', direccion: 'Cra 18 #18-49', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-96', nombre: 'Tienda donde apá', municipio: 'Baranoa', zona: 'R2', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-97', nombre: 'Tienda Monte de sion', municipio: 'Baranoa', zona: 'R2', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-98', nombre: 'Tienda La dinastía', municipio: 'Baranoa', zona: 'R2', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-99', nombre: 'Tienda el Chimborazo', municipio: 'Baranoa', zona: 'R2', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-100', nombre: 'Tienda los marinillos', municipio: 'Baranoa', zona: 'R2', direccion: 'Cra 13 cll 10-30', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-101', nombre: 'Tienda Bella Unión', municipio: 'Baranoa', zona: 'R2', direccion: 'Cll 21 #13-04', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-102', nombre: 'Tienda la bacanería de la 21', municipio: 'Baranoa', zona: 'R2', direccion: 'Cll 21 #16A-98', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-103', nombre: 'Tienda Koinonia', municipio: 'Baranoa', zona: 'R2', direccion: 'Cll 21 #18-04', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-104', nombre: 'Tienda Santa Ana', municipio: 'Baranoa', zona: 'R2', direccion: 'Calle 24 vía Usiacurí', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-105', nombre: 'Tienda España', municipio: 'Baranoa', zona: 'R2', direccion: 'Cll 26 Cra 22 esq', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-106', nombre: 'Tienda abril (N&D)', municipio: 'Baranoa', zona: 'R2', direccion: 'Cra 22C #23-02', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-107', nombre: 'Tienda La Costeña', municipio: 'Baranoa', zona: 'R2', direccion: 'Cll 22 #22D', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-108', nombre: 'Tienda Puerta de Oro', municipio: 'Baranoa', zona: 'R2', direccion: 'Cll 22 # 20-41', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-109', nombre: 'Tienda la Bendición de Dios', municipio: 'Baranoa', zona: 'R2', direccion: 'Cll 22 # 19A-30', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-110', nombre: 'Granero Viña del Mar', municipio: 'Baranoa', zona: 'R2', direccion: 'Cra 19 # 12-35', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-111', nombre: 'Tienda Manzanares', municipio: 'Baranoa', zona: 'R2', direccion: 'Cra 19 # 9 - 40', lat: '', lng: '', estado: 'Pendiente' },
-    // Polonuevo
-    { id: 'CLI-112', nombre: 'Tienda el Milagroso', municipio: 'Polonuevo', zona: 'R2', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-113', nombre: 'Panadería Santander', municipio: 'Polonuevo', zona: 'R2', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-114', nombre: 'Granero La Estación', municipio: 'Polonuevo', zona: 'R2', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
-    // Barranquilla
-    { id: 'CLI-115', nombre: 'Tienda las palmeras de la 42', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 42 #7 esquina', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-116', nombre: 'Tienda la preferida', municipio: 'Barranquilla', zona: 'R3', direccion: 'Cll 44 #18-170', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-117', nombre: 'Panadería la bendición de Dios', municipio: 'Barranquilla', zona: 'R3', direccion: 'Cra 20 con cll 44', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-118', nombre: 'Distribuciones Pinto', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 53C 23 34, San Isidro', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-119', nombre: 'Abastos Shalom', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 50 #34-06', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-120', nombre: 'Tienda villa Sol', municipio: 'Barranquilla', zona: 'R3', direccion: 'Carrera 30 #43-01', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-121', nombre: 'Tienda y estadero el ruedo', municipio: 'Barranquilla', zona: 'R3', direccion: 'Carrera 43 #42-03', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-122', nombre: 'Conjunto R las brisas la catedral', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 54 #44-145', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-123', nombre: 'Tienda y estadero la viña', municipio: 'Barranquilla', zona: 'R3', direccion: 'Carrera 38 #56-73', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-124', nombre: 'Restaurante la Merced', municipio: 'Barranquilla', zona: 'R3', direccion: 'Cll 61 #38-29', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-125', nombre: 'Panadería Makro pan', municipio: 'Barranquilla', zona: 'R3', direccion: 'Carrera 38 #61 esquina', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-126', nombre: 'Tienda maracai', municipio: 'Barranquilla', zona: 'R3', direccion: 'Cra 44 #63-58', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-127', nombre: 'Panadería la 47', municipio: 'Barranquilla', zona: 'R3', direccion: 'Cll 64 #47-02', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-128', nombre: 'Tienda la esquina', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 68 #43-69', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-129', nombre: 'Tienda Palermo', municipio: 'Barranquilla', zona: 'R3', direccion: 'Carrera 41C #71-78', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-130', nombre: 'Tienda la niña leo', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 70b #41-140', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-131', nombre: 'Tienda mi prado', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 70-#53-53', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-132', nombre: 'Frutera el muñeco', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 74 #43 esquina', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-133', nombre: 'Panadería Sabrosuras ajá', municipio: 'Barranquilla', zona: 'R3', direccion: 'Cra 42 #78b-221', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-134', nombre: 'Panadería y pastelería la 79', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 79 #43 esquina', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-135', nombre: 'Bonapetit', municipio: 'Barranquilla', zona: 'R3', direccion: 'Carrera 49C con 82 frente a Bonadona', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-136', nombre: 'La clave del éxito', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 80 #47 esquina', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-137', nombre: 'Restaurante Brunchea', municipio: 'Barranquilla', zona: 'R3', direccion: 'Carrera 46 #78-158', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-138', nombre: 'Tienda splendy', municipio: 'Barranquilla', zona: 'R3', direccion: 'Carrera 45 #79b 145', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-139', nombre: 'Panadería 5 de agosto', municipio: 'Barranquilla', zona: 'R3', direccion: 'Universidad del Atlántico', lat: '', lng: '', estado: 'Pendiente' },
-    // Galapa
-    { id: 'CLI-140', nombre: 'Tienda la mejor esquina', municipio: 'Galapa', zona: 'R3', direccion: 'Carrera 21C #18-60', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-141', nombre: 'Tienda oro de ofir', municipio: 'Galapa', zona: 'R3', direccion: 'Carrera 21 #15A–75', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-142', nombre: 'Tienda concordia', municipio: 'Galapa', zona: 'R3', direccion: 'Carrera 21 #15A–45', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-143', nombre: 'Tienda porvenir', municipio: 'Galapa', zona: 'R3', direccion: 'Calle 14 #18–34', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-144', nombre: 'Tienda la nacional', municipio: 'Galapa', zona: 'R3', direccion: 'Calle 14 #17A–08', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-145', nombre: 'Panadería Palma de Oro', municipio: 'Galapa', zona: 'R3', direccion: 'Calle 11 #16-04', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-146', nombre: 'Tienda la bendición de Dios', municipio: 'Galapa', zona: 'R3', direccion: 'Calle 10 #15–10', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-147', nombre: 'Tienda Soem', municipio: 'Galapa', zona: 'R3', direccion: 'Calle 9 #12-05', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-148', nombre: 'Tienda la fresca', municipio: 'Galapa', zona: 'R3', direccion: 'Calle 12 #9-43', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-149', nombre: 'Tienda Sama', municipio: 'Galapa', zona: 'R3', direccion: 'Carrera 10 #11-07', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-150', nombre: 'Tienda baratón', municipio: 'Galapa', zona: 'R3', direccion: 'Carrera 12 #13–39', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-151', nombre: 'Tienda brisas del libertador', municipio: 'Galapa', zona: 'R3', direccion: 'Calle 13 #14–05', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-152', nombre: 'Tienda la zona 15', municipio: 'Galapa', zona: 'R3', direccion: 'Calle 14 #14-157', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-153', nombre: 'Tienda la fe #1', municipio: 'Galapa', zona: 'R3', direccion: 'Carrera 16 #19–05', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-154', nombre: 'Tienda el peso menos', municipio: 'Galapa', zona: 'R3', direccion: 'Calle 22 #17-03', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-155', nombre: 'Tienda la esmeralda', municipio: 'Galapa', zona: 'R3', direccion: 'Carrera 17 #24A–21', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-156', nombre: 'Tienda las mercedes', municipio: 'Galapa', zona: 'R3', direccion: 'Carrera 16A #24A–35', lat: '', lng: '', estado: 'Pendiente' },
-    { id: 'CLI-157', nombre: 'Tienda donde felo', municipio: 'Galapa', zona: 'R3', direccion: 'Carrera 16 #7 esquina', lat: '', lng: '', estado: 'Pendiente' }
+    { id: 'CLI-03', nombre: 'Tienda los trupillos', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
+    { id: 'CLI-04', nombre: 'Tienda El económico ($1500)', municipio: 'Palmar de Varela', zona: 'R1', direccion: 'Principal', lat: '', lng: '', estado: 'Pendiente' },
+    { id: 'CLI-05', nombre: 'Tienda las palmeras de la 42', municipio: 'Barranquilla', zona: 'R3', direccion: 'Calle 42 #7', lat: '', lng: '', estado: 'Pendiente' }
   ]);
   const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', zona: 'R1', municipio: 'Palmar de Varela', direccion: '', lat: '', lng: '' });
 
-  // Catálogo de Productos oficiales basados en los formatos físicos (Arroz Tradicional, Arroz Kola, Corozo, Avena Tradicional)
+  // Catálogo de Productos editables individualmente
   const [productos, setProductos] = useState([
     { id: 'PROD-01', nombre: 'ARROZ TRADICIONAL', presentacion: '1000', precio: 8000 },
     { id: 'PROD-02', nombre: 'ARROZ KOLA', presentacion: '1000', precio: 8000 },
@@ -221,7 +61,7 @@ export default function App() {
   ]);
   const [nuevoProd, setNuevoProd] = useState({ nombre: '', presentacion: '1000', precio: '' });
 
-  // Cargues Diarios basados estrictamente en el formato físico de asignación
+  // Cargues Diarios / Inventario de Despachos
   const [carguesDiarios, setCarguesDiarios] = useState([]);
   const [cargueForm, setCargueForm] = useState({
     repartidorId: 'USR-02',
@@ -232,13 +72,11 @@ export default function App() {
     dineroTarde: 0,
     items: [
       { prodId: 'PROD-01', cantidadCargadas: 50, cantidadRegresadas: 0, precioUnitario: 8000 },
-      { id: 'PROD-02', cantidadCargadas: 50, cantidadRegresadas: 0, precioUnitario: 8000 },
-      { id: 'PROD-03', cantidadCargadas: 40, cantidadRegresadas: 0, precioUnitario: 7500 },
-      { id: 'PROD-04', cantidadCargadas: 40, cantidadRegresadas: 0, precioUnitario: 7500 }
+      { id: 'PROD-02', cantidadCargadas: 50, cantidadRegresadas: 0, precioUnitario: 8000 }
     ]
   });
 
-  // Ventas, Gastos y Liquidación (según formato CD-FR-504)
+  // Ventas y Liquidaciones
   const [ventas, setVentas] = useState([]);
   const [gastosRuta, setGastosRuta] = useState([]);
   const [nuevoGasto, setNuevoGasto] = useState({ tipo: 'COMBUSTIBLE', valor: '', concepto: '', metodo: 'EFECTIVO' });
@@ -269,6 +107,10 @@ export default function App() {
     const emailTrim = loginEmail.trim().toLowerCase();
     let found = usuariosSistema.find(u => u.email.toLowerCase() === emailTrim);
     
+    if (emailTrim === 'admin@matondi.com' && loginPass !== 'elmer0585') {
+      return alert('Contraseña de administrador incorrecta (clave: elmer0585).');
+    }
+
     if (!found) {
       const esAdmin = emailTrim.includes('admin') || emailTrim === '';
       found = {
@@ -360,7 +202,7 @@ export default function App() {
   };
 
   const agregarRuta = () => {
-    if (!nuevaRuta.nombre || nuevaRuta.municipios.length === 0) return alert('Diligencia el nombre de la ruta y al menos un municipio destino.');
+    if (!nuevaRuta.nombre || nuevaRuta.municipios.length === 0) return alert('Diligencia el nombre y al menos un municipio.');
     const rut = {
       id: `RUT-0${rutas.length + 1}`,
       nombre: sanitizeStr(nuevaRuta.nombre),
@@ -403,7 +245,7 @@ export default function App() {
     setClientes([...clientes, cli]);
     setNuevoCliente({ nombre: '', zona: 'R1', municipio: 'Palmar de Varela', direccion: '', lat: '', lng: '' });
     setModalAbierto(null);
-    alert('Cliente creado exitosamente con opción de geolocalización');
+    alert('Establecimiento registrado con éxito');
   };
 
   const guardarGeolocalizacionCliente = () => {
@@ -426,6 +268,14 @@ export default function App() {
     setNuevoProd({ nombre: '', presentacion: '1000', precio: '' });
     setModalAbierto(null);
     alert('Producto agregado al catálogo con éxito');
+  };
+
+  const guardarEdicionProducto = () => {
+    if (!productoEditando) return;
+    setProductos(productos.map(p => p.id === productoEditando.id ? productoEditando : p));
+    setModalAbierto(null);
+    setProductoEditando(null);
+    alert('Producto actualizado con éxito');
   };
 
   const agregarItemCargueForm = () => {
@@ -461,7 +311,7 @@ export default function App() {
     const rutaObj = rutas.find(r => r.nombre === cargueForm.rutaNombre);
     if (!rutaObj) return alert('Selecciona una ruta válida');
 
-    if (cargueForm.items.length === 0) return alert('Agrega al menos un producto al cargue del vehículo.');
+    if (cargueForm.items.length === 0) return alert('Agrega al menos un producto al despacho.');
 
     const nuevoCargueRegistro = {
       id: `CARG-${Date.now()}`,
@@ -486,28 +336,14 @@ export default function App() {
           cantidadCargadas: cargadas,
           cantidadRegresadas: regresadas,
           totalSalida: totalSalida,
-          cantidadActual: totalSalida, // Stock operativo en ruta
+          cantidadActual: totalSalida,
           precioUnitario: Number(item.precioUnitario) || (p ? p.precio : 0)
         };
       })
     };
 
     setCarguesDiarios([...carguesDiarios, nuevoCargueRegistro]);
-    alert('¡Cargue general a la ruta asignado con éxito conforme al formato físico!');
-  };
-
-  const registrarGastoRuta = () => {
-    if (!nuevoGasto.valor || !nuevoGasto.concepto) return alert('Diligencia el valor y el concepto del gasto');
-    const gasto = {
-      id: `GAST-${Date.now()}`,
-      tipo: nuevoGasto.tipo,
-      valor: Number(nuevoGasto.valor),
-      concepto: sanitizeStr(nuevoGasto.concepto),
-      metodo: nuevoGasto.metodo
-    };
-    setGastosRuta([...gastosRuta, gasto]);
-    setNuevoGasto({ tipo: 'COMBUSTIBLE', valor: '', concepto: '', metodo: 'EFECTIVO' });
-    alert('Gasto registrado con éxito');
+    alert('¡Despacho de ruta registrado con éxito en el inventario!');
   };
 
   const registrarVenta = () => {
@@ -523,7 +359,7 @@ export default function App() {
     if (!cargueActivo) return alert('No tienes un cargue de ruta asignado para hoy.');
 
     const itemCargue = cargueActivo.items.find(i => i.prodId === prodSel);
-    if (!itemCargue || itemCargue.cantidadActual < cantVendida) return alert('Inventario insuficiente en tu vehículo para esta venta.');
+    if (!itemCargue || itemCargue.cantidadActual < cantVendida) return alert('Inventario insuficiente en tu vehículo.');
 
     const precioVenta = itemCargue.precioUnitario || prod.precio;
     const nuevaVenta = {
@@ -566,7 +402,7 @@ export default function App() {
     setDeudaAnterior(0);
     setCambiosItem(0);
     setMuestrasItem(0);
-    alert('Venta y registro en formato físico guardados correctamente');
+    alert('Venta registrada correctamente');
   };
 
   const registrarNoVenta = () => {
@@ -695,7 +531,7 @@ export default function App() {
                     <Lock className="w-6 h-6 text-amber-400" />
                   </div>
                   <h2 className="text-lg font-bold text-amber-400">Acceso al Sistema ERP</h2>
-                  <p className="text-xs text-slate-400">Ingresa tus credenciales de administrador.</p>
+                  <p className="text-xs text-slate-400">Ingresa tus credenciales de administrador (clave: elmer0585).</p>
                 </div>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
@@ -737,6 +573,7 @@ export default function App() {
                       { id: 'usuarios', label: 'Gestión de Usuarios', icon: UserCheck },
                       { id: 'rutas', label: 'Gestión de Rutas', icon: Compass },
                       { id: 'cargueview', label: 'Cargue Despacho RUTA', icon: ClipboardList },
+                      { id: 'inventariodespachado', label: 'Inventario Despachos', icon: Package },
                       { id: 'gastos', label: 'Gastos de Ruta', icon: FileSpreadsheet },
                       { id: 'productos', label: 'Catálogo & Precios', icon: Package },
                       { id: 'clientes', label: 'Base Clientes & GPS', icon: Users },
@@ -807,7 +644,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* GESTIÓN DE RUTAS (Modificar, Desactivar y Múltiples Municipios) */}
+                {/* GESTIÓN DE RUTAS */}
                 {pcSubTab === 'rutas' && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
@@ -861,7 +698,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CARGUE DESPACHO RUTA (Basado en el formato físico oficial) */}
+                {/* CARGUE DESPACHO RUTA */}
                 {pcSubTab === 'cargueview' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
@@ -1027,7 +864,7 @@ export default function App() {
                                   <td className="p-3">
                                     {c.items.map((it, idx) => (
                                       <div key={idx} className="text-[11px]">
-                                        {it.prodName || it.prodNombre}: <strong className="text-amber-400">{it.totalSalida} salidos</strong> (Carg: {it.cantidadCargadas}, Reg: {it.cantidadRegresadas})
+                                        {it.prodNombre}: <strong className="text-amber-400">{it.totalSalida} salidos</strong> (Carg: {it.cantidadCargadas}, Reg: {it.cantidadRegresadas})
                                       </div>
                                     ))}
                                   </td>
@@ -1037,6 +874,41 @@ export default function App() {
                           </table>
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* MÓDULO DE INVENTARIO DE DESPACHOS */}
+                {pcSubTab === 'inventariodespachado' && (
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-bold text-amber-400">Módulo de Inventario de Despachos y Stock en Ruta</h3>
+                    <div className="bg-slate-900 p-5 rounded-xl border border-slate-800">
+                      {carguesDiarios.length === 0 ? (
+                        <p className="text-xs text-slate-400 py-8 text-center">El inventario de despachos se encuentra en blanco o fue cerrado.</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {carguesDiarios.map(c => (
+                            <div key={c.id} className="bg-slate-950 p-4 rounded-lg border border-slate-800 space-y-3">
+                              <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                                <div>
+                                  <span className="font-bold text-amber-300">{c.repartidorNombre}</span>
+                                  <p className="text-[10px] text-slate-400">Fecha: {c.fecha}</p>
+                                </div>
+                                <span className="text-[10px] bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded font-semibold">{c.rutaNombre}</span>
+                              </div>
+                              <div className="space-y-1.5 pt-1">
+                                <p className="text-[11px] font-bold text-slate-400">Control de Productos en Vehículo:</p>
+                                {c.items.map((it, idx) => (
+                                  <div key={idx} className="flex justify-between text-xs bg-slate-900 p-2 rounded">
+                                    <span className="text-slate-200">{it.prodNombre} ({it.presentacion}mL)</span>
+                                    <span className="font-bold text-amber-400">Stock Actual: {it.cantidadActual} / Salida: {it.totalSalida}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1129,21 +1001,29 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CATÁLOGO DE PRODUCTOS */}
+                {/* CATÁLOGO DE PRODUCTOS (EDITABLES INDIVIDUALMENTE) */}
                 {pcSubTab === 'productos' && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <h3 className="text-sm font-bold text-amber-400">Catálogo Oficial de Productos (Arroz, Kola, Corozo, Avena)</h3>
+                      <h3 className="text-sm font-bold text-amber-400">Catálogo Oficial de Productos (Editables Individualmente)</h3>
                       <button onClick={() => setModalAbierto('producto')} className="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2">
                         <Plus className="w-4 h-4" /> Agregar Producto
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {productos.map(p => (
-                        <div key={p.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-                          <p className="font-bold text-slate-100">{p.nombre}</p>
-                          <p className="text-[11px] text-slate-400">Presentación: {p.presentacion} mL</p>
-                          <p className="text-xs text-amber-400 font-semibold">${p.precio.toLocaleString()} COP</p>
+                        <div key={p.id} className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                          <div className="space-y-1">
+                            <p className="font-bold text-slate-100">{p.nombre}</p>
+                            <p className="text-[11px] text-slate-400">Presentación: {p.presentacion} mL</p>
+                            <p className="text-xs text-amber-400 font-semibold">${p.precio.toLocaleString()} COP</p>
+                          </div>
+                          <button 
+                            onClick={() => { setProductoEditando(p); setModalAbierto('editarProducto'); }}
+                            className="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2 rounded-lg border border-slate-700 text-xs font-bold flex items-center gap-1"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" /> Editar
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -1418,7 +1298,7 @@ export default function App() {
                       <option value="">-- Seleccionar Producto --</option>
                       {productosMovilDisponibles.map(item => (
                         <option key={item.prodId} value={item.prodId}>
-                          {item.prodName || item.prodNombre} - Stock: {item.cantidadActual} und (${item.precioUnitario.toLocaleString()})
+                          {item.prodNombre} - Stock: {item.cantidadActual} und (${item.precioUnitario.toLocaleString()})
                         </option>
                       ))}
                     </select>
@@ -1430,18 +1310,18 @@ export default function App() {
                       <input type="number" min="1" value={cantVendida} onChange={e => setCantVendida(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">Nueva Deuda</label>
+                      <label className="text-xs text-slate-400 mb-1 block">Nueva Deuda</label>
                       <input type="number" min="0" value={nuevaDeuda} onChange={e => setNuevaDeuda(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">Cambios</label>
+                      <label className="text-xs text-slate-400 mb-1 block">Cambios</label>
                       <input type="number" min="0" value={cambiosItem} onChange={e => setCambiosItem(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">Muestras</label>
+                      <label className="text-xs text-slate-400 mb-1 block">Muestras</label>
                       <input type="number" min="0" value={muestrasItem} onChange={e => setMuestrasItem(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" />
                     </div>
                   </div>
@@ -1480,7 +1360,7 @@ export default function App() {
           <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4 animate-in fade-in zoom-in duration-200">
             
             <button 
-              onClick={() => { setModalAbierto(null); setRutaEditando(null); setClienteEditando(null); }}
+              onClick={() => { setModalAbierto(null); setRutaEditando(null); setClienteEditando(null); setProductoEditando(null); }}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 bg-slate-800 p-1.5 rounded-lg border border-slate-700 transition-colors"
             >
               <X className="w-4 h-4" />
@@ -1558,6 +1438,32 @@ export default function App() {
                 </div>
                 <button onClick={guardarEdicionRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
                   Actualizar Cambios de Ruta
+                </button>
+              </div>
+            )}
+
+            {/* MODAL: EDITAR PRODUCTO INDIVIDUALMENTE */}
+            {modalAbierto === 'editarProducto' && productoEditando && (
+              <div className="space-y-4">
+                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
+                  <Edit3 className="w-5 h-5" /> Editar Producto Individual
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Nombre del Producto</label>
+                    <input type="text" value={productoEditando.nombre} onChange={e => setProductoEditando({ ...productoEditando, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Presentación (mL)</label>
+                    <input type="text" value={productoEditando.presentacion} onChange={e => setProductoEditando({ ...productoEditando, presentacion: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Precio Unitario (COP)</label>
+                    <input type="number" value={productoEditando.precio} onChange={e => setProductoEditando({ ...productoEditando, precio: Number(e.target.value) })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
+                  </div>
+                </div>
+                <button onClick={guardarEdicionProducto} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-lg text-xs font-bold text-white shadow-lg">
+                  Guardar Cambios de Producto
                 </button>
               </div>
             )}
