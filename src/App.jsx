@@ -52,7 +52,7 @@ export default function App() {
   ]);
   const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', zona: 'R1', municipio: 'Sabanagrande', direccion: '', lat: '', lng: '' });
 
-  // Catálogo de Productos Oficiales (Editables individualmente)
+  // Catálogo de Productos Oficiales
   const [productos, setProductos] = useState([
     { id: 'PROD-01', nombre: 'ARROZ TRADICIONAL', presentacion: '1000', precio: 8000 },
     { id: 'PROD-02', nombre: 'ARROZ KOLA', presentacion: '1000', precio: 8000 },
@@ -277,9 +277,12 @@ export default function App() {
   };
 
   const agregarItemCargueForm = () => {
+    const idsYaUsados = cargueForm.items.map(i => i.prodId);
+    const siguienteProd = productos.find(p => !idsYaUsados.includes(p.id)) || productos[0];
+
     setCargueForm({
       ...cargueForm,
-      items: [...cargueForm.items, { prodId: productos[0]?.id || '', cantidadCargadas: 30, cantidadRegresadas: 0, precioUnitario: productos[0]?.precio || 8000 }]
+      items: [...cargueForm.items, { prodId: siguienteProd.id, cantidadCargadas: 30, cantidadRegresadas: 0, precioUnitario: siguienteProd.precio }]
     });
   };
 
@@ -359,10 +362,10 @@ export default function App() {
     const itemCargue = cargueActivo.items.find(i => i.prodId === prodSel);
     if (!itemCargue || itemCargue.cantidadActual < cantVendida) return alert('Inventario insuficiente en tu vehículo.');
 
-    // Validar si el stock restante llega a 0 y avisar al vendedor
+    // Notificar al vendedor si el stock llega a cero
     const stockRestante = itemCargue.cantidadActual - Number(cantVendida);
     if (stockRestante === 0) {
-      alert(`⚠️ AVISO: Se ha terminado el stock de ${itemCargue.prodNombre} en el vehículo.`);
+      alert(`⚠️ AVISO DE STOCK: Se ha terminado el stock de ${itemCargue.prodNombre} en el vehículo.`);
     }
 
     const precioVenta = itemCargue.precioUnitario || prod.precio;
@@ -459,7 +462,7 @@ export default function App() {
     XLSX.writeFile(wb, `Matondi_Liquidacion_Ruta_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
-  // Balance en tiempo real superior
+  // Balance en tiempo real superior (más grande)
   const totalDineroRecaudadoGral = ventas.reduce((acc, v) => acc + v.total, 0);
   const totalCantidadVendidaGral = ventas.reduce((acc, v) => acc + v.cantidad, 0);
 
@@ -480,20 +483,20 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 relative">
       
-      {/* 1. BALANCE DE VENTAS EN TIEMPO REAL (PARTE SUPERIOR) */}
-      <div className="max-w-7xl mx-auto bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 border border-amber-500/40 p-3 rounded-xl mb-4 shadow-xl flex flex-wrap justify-between items-center gap-4">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-amber-400" />
-          <span className="text-xs font-bold uppercase tracking-wider text-amber-300">Balance de Ventas en Tiempo Real:</span>
+      {/* 1. BALANCE DE VENTAS EN TIEMPO REAL (MÁS GRANDE Y VISIBLE) */}
+      <div className="max-w-7xl mx-auto bg-gradient-to-r from-slate-900 via-amber-950/50 to-slate-900 border border-amber-500/50 p-4 rounded-xl mb-4 shadow-2xl flex flex-wrap justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <BarChart3 className="w-6 h-6 text-amber-400" />
+          <span className="text-sm font-extrabold uppercase tracking-wider text-amber-300">Balance de Ventas en Tiempo Real:</span>
         </div>
-        <div className="flex flex-wrap items-center gap-6 text-xs">
-          <div>
-            <span className="text-slate-400">Total Unidades: </span>
-            <strong className="text-white font-bold bg-slate-950 px-2 py-1 rounded border border-slate-800">{totalCantidadVendidaGral} und</strong>
+        <div className="flex flex-wrap items-center gap-8 text-sm">
+          <div className="bg-slate-950 px-4 py-2 rounded border border-slate-800 shadow-inner">
+            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Total Unidades Vendidas</span>
+            <strong className="text-white text-lg font-black">{totalCantidadVendidaGral} und</strong>
           </div>
-          <div>
-            <span className="text-slate-400">Dinero Recaudado General: </span>
-            <strong className="text-emerald-400 font-bold bg-slate-950 px-2 py-1 rounded border border-slate-800">${totalDineroRecaudadoGral.toLocaleString()} COP</strong>
+          <div className="bg-slate-950 px-4 py-2 rounded border border-slate-800 shadow-inner">
+            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Dinero Recaudado General</span>
+            <strong className="text-emerald-400 text-lg font-black">${totalDineroRecaudadoGral.toLocaleString()} COP</strong>
           </div>
         </div>
       </div>
@@ -712,7 +715,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CARGUE DESPACHO RUTA */}
+                {/* CARGUE DESPACHO RUTA (Con productos únicos y listado fijo) */}
                 {pcSubTab === 'cargueview' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
@@ -786,6 +789,7 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* LISTADO DE PRODUCTOS EN DESPACHO (MODO INFORMATIVO Y EDITABLE POR LÍNEA) */}
                       <div className="border-t border-slate-800 pt-3 space-y-3">
                         <div className="flex justify-between items-center">
                           <label className="text-xs font-bold text-amber-300">Productos (Cargadas / Regresadas)</label>
@@ -927,12 +931,12 @@ export default function App() {
                   </div>
                 )}
 
-                {/* GASTOS DE RUTA */}
+                {/* GASTOS DE RUTA (PURAMENTE INFORMATIVO) */}
                 {pcSubTab === 'gastos' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
                       <h3 className="text-sm font-bold text-amber-400 flex items-center gap-2">
-                        <FileSpreadsheet className="w-4 h-4" /> Registrar Gasto de Ruta
+                        <FileSpreadsheet className="w-4 h-4" /> Registro Informativo de Gastos
                       </h3>
                       <div>
                         <label className="text-xs text-slate-400 block mb-1">Tipo de Gasto</label>
@@ -979,15 +983,15 @@ export default function App() {
                         </select>
                       </div>
                       <button onClick={registrarGastoRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-2.5 rounded-none text-xs font-bold text-white shadow-lg">
-                        Guardar Gasto
+                        Guardar Gasto Informativo
                       </button>
                     </div>
 
                     <div className="md:col-span-2 bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
-                      <h3 className="text-sm font-bold text-amber-400">Gastos Registrados en la Jornada</h3>
+                      <h3 className="text-sm font-bold text-amber-400">Resumen Informativo de Gastos de Ruta</h3>
                       <div className="overflow-x-auto">
                         {gastosRuta.length === 0 ? (
-                          <p className="text-xs text-slate-400 py-8 text-center">No hay gastos registrados.</p>
+                          <p className="text-xs text-slate-400 py-8 text-center">No hay gastos informativos registrados.</p>
                         ) : (
                           <table className="w-full text-left text-xs text-slate-300">
                             <thead className="bg-slate-950 text-slate-400 uppercase">
@@ -1015,7 +1019,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CATÁLOGO DE PRODUCTOS (EDITABLES INDIVIDUALMENTE) */}
+                {/* CATÁLOGO DE PRODUCTOS */}
                 {pcSubTab === 'productos' && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
@@ -1334,8 +1338,8 @@ export default function App() {
                       <input type="number" min="0" value={cambiosItem} onChange={e => setCambiosItem(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">Muestras</label>
-                      <input type="number" min="0" value={muestrasItem} onChange={e => setMuestrasItem(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" />
+                      <label className="text-xs text-slate-400 block mb-1">Muestras</label>
+                      <input type="number" min="0" value={muestrasItem} onChange={e => setMuestrasItem(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-sm text-slate-200" />
                     </div>
                   </div>
 
@@ -1413,224 +1417,4 @@ export default function App() {
                   </div>
                   <div>
                     <label className="text-xs text-slate-400 block mb-1">Enlace Google Maps</label>
-                    <input type="text" value={nuevaRuta.googleMaps} onChange={e => setNuevaRuta({ ...nuevaRuta, googleMaps: e.target.value })} placeholder="https://maps.google.com/?q=..." className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                </div>
-                <button onClick={agregarRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
-                  Guardar y Registrar Ruta
-                </button>
-              </div>
-            )}
-
-            {modalAbierto === 'editarRuta' && rutaEditando && (
-              <div className="space-y-4">
-                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
-                  <Edit3 className="w-5 h-5" /> Modificar Información de Ruta
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Nombre de la Ruta</label>
-                    <input type="text" value={rutaEditando.nombre} onChange={e => setRutaEditando({ ...rutaEditando, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-slate-400 block mb-1">Ciudad</label>
-                      <input type="text" value={rutaEditando.ciudad} onChange={e => setRutaEditando({ ...rutaEditando, ciudad: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-slate-400 block mb-1">Departamento</label>
-                      <input type="text" value={rutaEditando.departamento} onChange={e => setRutaEditando({ ...rutaEditando, departamento: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Enlace Google Maps</label>
-                    <input type="text" value={rutaEditando.googleMaps} onChange={e => setRutaEditando({ ...rutaEditando, googleMaps: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                </div>
-                <button onClick={guardarEdicionRuta} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
-                  Actualizar Cambios de Ruta
-                </button>
-              </div>
-            )}
-
-            {modalAbierto === 'editarProducto' && productoEditando && (
-              <div className="space-y-4">
-                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
-                  <Edit3 className="w-5 h-5" /> Editar Producto Individual
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Nombre del Producto</label>
-                    <input type="text" value={productoEditando.nombre} onChange={e => setProductoEditando({ ...productoEditando, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Presentación (mL)</label>
-                    <input type="text" value={productoEditando.presentacion} onChange={e => setProductoEditando({ ...productoEditando, presentacion: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Precio Unitario (COP)</label>
-                    <input type="number" value={productoEditando.precio} onChange={e => setProductoEditando({ ...productoEditando, precio: Number(e.target.value) })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                </div>
-                <button onClick={guardarEdicionProducto} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
-                  Guardar Cambios de Producto
-                </button>
-              </div>
-            )}
-
-            {modalAbierto === 'geoCliente' && clienteEditando && (
-              <div className="space-y-4">
-                <h3 className="text-md font-bold text-sky-400 flex items-center gap-2">
-                   Geolocalización GPS: {clienteEditando.nombre}
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Municipio / Dirección</label>
-                    <p className="text-xs font-medium text-slate-200">{clienteEditando.municipio} - {clienteEditando.direccion}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-slate-400 block mb-1">Latitud</label>
-                      <input type="text" value={clienteEditando.lat} onChange={e => setClienteEditando({ ...clienteEditando, lat: e.target.value })} placeholder="10.7412" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-slate-400 block mb-1">Longitud</label>
-                      <input type="text" value={clienteEditando.lng} onChange={e => setClienteEditando({ ...clienteEditando, lng: e.target.value })} placeholder="-74.7541" className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                    </div>
-                  </div>
-                </div>
-                <button onClick={guardarGeolocalizacionCliente} className="w-full bg-sky-600 hover:bg-sky-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
-                  Guardar Coordenadas GPS
-                </button>
-              </div>
-            )}
-
-            {modalAbierto === 'verVentasMovil' && mobileUser && (
-              <div className="space-y-4 max-h-[80vh] overflow-y-auto">
-                <h3 className="text-md font-bold text-emerald-400 flex items-center gap-2">
-                  <FileText className="w-5 h-5" /> Mis Ventas Realizadas (Ruta Actual)
-                </h3>
-                <div className="space-y-2">
-                  {ventas.filter(v => v.vendedorId === mobileUser.id).length === 0 ? (
-                    <p className="text-xs text-slate-400 text-center py-6">No has registrado ventas todavía en esta sesión.</p>
-                  ) : (
-                    ventas.filter(v => v.vendedorId === mobileUser.id).map(v => (
-                      <div key={v.id} className="bg-slate-950 p-3 rounded-none border border-slate-800 text-xs flex justify-between items-center">
-                        <div>
-                          <p className="font-bold text-slate-200">{v.clienteNombre} ({v.municipio})</p>
-                          <p className="text-[11px] text-slate-400">{v.prodNombre} x {v.cantidad} und ({v.metodo})</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-emerald-400">${v.total.toLocaleString()} COP</p>
-                          <p className="text-[10px] text-slate-500">{v.hora}</p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-                <button onClick={() => setModalAbierto(null)} className="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-none text-xs font-bold text-slate-200">
-                  Cerrar Ventana
-                </button>
-              </div>
-            )}
-
-            {modalAbierto === 'cliente' && (
-              <div className="space-y-4">
-                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
-                  <Users className="w-5 h-5" /> Registrar Nuevo Establecimiento Oficial
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Nombre del Establecimiento</label>
-                    <input type="text" value={nuevoCliente.nombre} onChange={e => setNuevoCliente({ ...nuevoCliente, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-slate-400 block mb-1">Zona / Ruta</label>
-                      <input type="text" value={nuevoCliente.zona} onChange={e => setNuevoCliente({ ...nuevoCliente, zona: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                    </div>
-                    <div>
-                      <label className="text-xs text-slate-400 block mb-1">Municipio</label>
-                      <input type="text" value={nuevoCliente.municipio} onChange={e => setNuevoCliente({ ...nuevoCliente, municipio: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Dirección / Referencia</label>
-                    <input type="text" value={nuevoCliente.direccion} onChange={e => setNuevoCliente({ ...nuevoCliente, direccion: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                </div>
-                <button onClick={agregarCliente} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
-                  Guardar Establecimiento
-                </button>
-              </div>
-            )}
-
-            {modalAbierto === 'usuario' && (
-              <div className="space-y-4">
-                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
-                  <UserCheck className="w-5 h-5" /> Registrar Nuevo Empleado
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Nombre Completo</label>
-                    <input type="text" value={nuevoUsuario.nombre} onChange={e => setNuevoUsuario({ ...nuevoUsuario, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Correo Electrónico (Login)</label>
-                    <input type="email" value={nuevoUsuario.email} onChange={e => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Contraseña</label>
-                    <input type="password" value={nuevoUsuario.password} onChange={e => setNuevoUsuario({ ...nuevoUsuario, password: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs text-slate-400 block mb-1">Rol</label>
-                      <select value={nuevoUsuario.rol} onChange={e => setNuevoUsuario({ ...nuevoUsuario, rol: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200">
-                        <option value="Repartidor">Repartidor</option>
-                        <option value="Administrador">Administrador</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs text-slate-400 block mb-1">Vehículo / Ruta</label>
-                      <input type="text" value={nuevoUsuario.vehiculo} onChange={e => setNuevoUsuario({ ...nuevoUsuario, vehiculo: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                    </div>
-                  </div>
-                </div>
-                <button onClick={agregarUsuarioSistema} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
-                  Guardar Empleado
-                </button>
-              </div>
-            )}
-
-            {modalAbierto === 'producto' && (
-              <div className="space-y-4">
-                <h3 className="text-md font-bold text-amber-400 flex items-center gap-2">
-                  <Package className="w-5 h-5" /> Agregar Producto al Catálogo
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Nombre del Producto</label>
-                    <input type="text" value={nuevoProd.nombre} onChange={e => setNuevoProd({ ...nuevoProd, nombre: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Presentación (mL)</label>
-                    <input type="text" value={nuevoProd.presentacion} onChange={e => setNuevoProd({ ...nuevoProd, presentacion: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400 block mb-1">Precio Unitario (COP)</label>
-                    <input type="number" value={nuevoProd.precio} onChange={e => setNuevoProd({ ...nuevoProd, precio: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-xs text-slate-200" />
-                  </div>
-                </div>
-                <button onClick={agregarProducto} className="w-full bg-amber-600 hover:bg-amber-500 py-3 rounded-none text-xs font-bold text-white shadow-lg">
-                  Registrar Producto
-                </button>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+                    <input type="text" value
