@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Users, MapPin, Truck, ShoppingCart, Database, FileSpreadsheet, 
-  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2, Edit3, CheckCircle, Eye, FileText, Map, LogOut 
+  Shield, Send, Plus, Package, UserCheck, Lock, BarChart3, RotateCcw, ClipboardList, Compass, X, History, Trash2, Edit3, CheckCircle, Eye, FileText, Map, LogOut, Layers 
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -52,7 +52,7 @@ export default function App() {
   ]);
   const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', zona: 'R1', municipio: 'Sabanagrande', direccion: '', lat: '', lng: '' });
 
-  // Catálogo de Productos Oficiales
+  // Catálogo de Productos Oficiales (Bebidas)
   const [productos, setProductos] = useState([
     { id: 'PROD-01', nombre: 'ARROZ TRADICIONAL', presentacion: '1000', precio: 8000 },
     { id: 'PROD-02', nombre: 'ARROZ KOLA', presentacion: '1000', precio: 8000 },
@@ -347,6 +347,20 @@ export default function App() {
     alert('¡Despacho de ruta registrado con éxito en el inventario!');
   };
 
+  const registrarGastoRuta = () => {
+    if (!nuevoGasto.valor || !nuevoGasto.concepto) return alert('Diligencia el valor y el concepto del gasto');
+    const gasto = {
+      id: `GAST-${Date.now()}`,
+      tipo: nuevoGasto.tipo,
+      valor: Number(nuevoGasto.valor),
+      concepto: sanitizeStr(nuevoGasto.concepto),
+      metodo: nuevoGasto.metodo
+    };
+    setGastosRuta([...gastosRuta, gasto]);
+    setNuevoGasto({ tipo: 'COMBUSTIBLE', valor: '', concepto: '', metodo: 'EFECTIVO' });
+    alert('Gasto informativo registrado con éxito');
+  };
+
   const registrarVenta = () => {
     if (!municipioSel) return alert('Selecciona un municipio');
     if (!clienteSel) return alert('Selecciona un establecimiento');
@@ -362,7 +376,6 @@ export default function App() {
     const itemCargue = cargueActivo.items.find(i => i.prodId === prodSel);
     if (!itemCargue || itemCargue.cantidadActual < cantVendida) return alert('Inventario insuficiente en tu vehículo.');
 
-    // Notificar al vendedor si el stock llega a cero
     const stockRestante = itemCargue.cantidadActual - Number(cantVendida);
     if (stockRestante === 0) {
       alert(`⚠️ AVISO DE STOCK: Se ha terminado el stock de ${itemCargue.prodNombre} en el vehículo.`);
@@ -462,7 +475,7 @@ export default function App() {
     XLSX.writeFile(wb, `Matondi_Liquidacion_Ruta_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
-  // Balance en tiempo real superior (más grande)
+  // Balance en tiempo real superior (ampliado sin título redundante)
   const totalDineroRecaudadoGral = ventas.reduce((acc, v) => acc + v.total, 0);
   const totalCantidadVendidaGral = ventas.reduce((acc, v) => acc + v.cantidad, 0);
 
@@ -474,8 +487,6 @@ export default function App() {
   });
 
   const cargueMovilActivo = mobileUser ? carguesDiarios.find(c => c.repartidorId === mobileUser.id || c.repartidorNombre.toLowerCase() === mobileUser.nombre.toLowerCase()) : null;
-  
-  // Municipios disponibles estrictamente asignados a la ruta del repartidor móvil
   const municipiosRutaMovil = cargueMovilActivo ? (rutas.find(r => r.nombre === cargueMovilActivo.rutaNombre)?.municipios || []) : [];
   const clientesFiltradosMovil = clientes.filter(c => municipioSel ? (c.municipio.toLowerCase() === municipioSel.toLowerCase() && municipiosRutaMovil.map(m => m.toLowerCase()).includes(c.municipio.toLowerCase())) : false);
   const productosMovilDisponibles = cargueMovilActivo ? cargueMovilActivo.items.filter(i => i.cantidadActual > 0) : [];
@@ -483,38 +494,41 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 relative">
       
-      {/* 1. BALANCE DE VENTAS EN TIEMPO REAL (MÁS GRANDE Y VISIBLE) */}
-      <div className="max-w-7xl mx-auto bg-gradient-to-r from-slate-900 via-amber-950/50 to-slate-900 border border-amber-500/50 p-4 rounded-xl mb-4 shadow-2xl flex flex-wrap justify-between items-center gap-4">
-        <div className="flex items-center gap-3">
-          <BarChart3 className="w-6 h-6 text-amber-400" />
-          <span className="text-sm font-extrabold uppercase tracking-wider text-amber-300">Balance de Ventas en Tiempo Real:</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-8 text-sm">
-          <div className="bg-slate-950 px-4 py-2 rounded border border-slate-800 shadow-inner">
-            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Total Unidades Vendidas</span>
-            <strong className="text-white text-lg font-black">{totalCantidadVendidaGral} und</strong>
+      {/* ENCABEZADO GENERAL FUSIONADO: NOMBRE ARRIBA/LADO Y CUADROS DE DATOS INTEGRADOS */}
+      <header className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center bg-slate-900 border border-amber-900/40 p-4 rounded-xl mb-6 shadow-2xl relative gap-4">
+        
+        {/* Fusión: Logo, Título y Cuadros de Datos en una sola fila compacta */}
+        <div className="flex flex-col md:flex-row items-center gap-6 w-full lg:w-auto">
+          <div className="flex items-center gap-3">
+            <div className="bg-amber-600/20 p-2.5 rounded-xl border border-amber-500/30">
+              <Database className="w-7 h-7 text-amber-500" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-wide text-amber-400">MATONDI BEER COLOMBIA</h1>
+              <p className="text-[10px] text-slate-400">ERP & Control de Reparto - Atlántico</p>
+            </div>
           </div>
-          <div className="bg-slate-950 px-4 py-2 rounded border border-slate-800 shadow-inner">
-            <span className="text-slate-400 block text-[10px] uppercase font-semibold">Dinero Recaudado General</span>
-            <strong className="text-emerald-400 text-lg font-black">${totalDineroRecaudadoGral.toLocaleString()} COP</strong>
-          </div>
-        </div>
-      </div>
 
-      {/* ENCABEZADO GENERAL CON BOTONES ESTILO CUADRADO (WINDOWS - GRIS / LOGO COLOR / LETRAS AMARILLAS) Y BOTÓN CERRAR SESIÓN PEQUEÑO EN ESQUINA */}
-      <header className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center bg-slate-900 border border-amber-900/40 p-4 rounded-xl mb-6 shadow-2xl relative">
-        <div className="flex items-center gap-3 mb-4 md:mb-0">
-          <div className="bg-amber-600/20 p-2.5 rounded-xl border border-amber-500/30">
-            <Database className="w-7 h-7 text-amber-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-wide text-amber-400">MATONDI BEER COLOMBIA</h1>
-            <p className="text-xs text-slate-400">ERP & Control de Reparto según Formatos Oficiales - Atlántico</p>
+          {/* Cuadros de datos numéricos en tiempo real (sin texto redundante) */}
+          <div className="flex items-center gap-4 bg-slate-950/90 px-4 py-2.5 rounded border border-amber-500/40 shadow-inner">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-amber-400" />
+            </div>
+            <div className="flex items-center gap-6 text-sm">
+              <div className="flex flex-col">
+                <span className="text-[9px] text-slate-400 uppercase font-bold">Unidades</span>
+                <strong className="text-white font-black text-base">{totalCantidadVendidaGral} und</strong>
+              </div>
+              <div className="border-l border-slate-800 pl-6 flex flex-col">
+                <span className="text-[9px] text-slate-400 uppercase font-bold">Recaudado</span>
+                <strong className="text-emerald-400 font-black text-base">${totalDineroRecaudadoGral.toLocaleString()} COP</strong>
+              </div>
+            </div>
           </div>
         </div>
 
+        {/* Botones de inicio estilo cuadrado Windows y botón de cerrar sesión pequeño en esquina */}
         <div className="flex items-center gap-3">
-          {/* Botones de inicio estilo cuadrado Windows */}
           <button 
             onClick={() => setActiveTab('pc')}
             className={`px-4 py-2.5 rounded-none border border-slate-700 font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'pc' ? 'bg-slate-700 shadow-inner' : 'bg-slate-800 hover:bg-slate-700'} text-amber-400`}
@@ -528,11 +542,10 @@ export default function App() {
             <Truck className="w-4 h-4 text-emerald-400" /> Vendedor Móvil
           </button>
 
-          {/* Botón cerrar sesión pequeño en la esquina */}
           {(isLoggedIn || isMobileLoggedIn) && (
             <button 
               onClick={isLoggedIn ? cerrarSesion : cerrarSesionMovil}
-              className="bg-red-900/40 border border-red-500/40 text-red-300 hover:bg-red-900/60 p-1.5 rounded-none text-[10px] font-bold flex items-center gap-1 ml-4"
+              className="bg-red-900/40 border border-red-500/40 text-red-300 hover:bg-red-900/60 p-2 rounded-none text-[10px] font-bold flex items-center gap-1 ml-2"
               title="Cerrar Sesión"
             >
               <LogOut className="w-3 h-3" /> Salir
@@ -597,7 +610,7 @@ export default function App() {
                       { id: 'gastos', label: 'Gastos de Ruta', icon: FileSpreadsheet },
                       { id: 'productos', label: 'Catálogo & Precios', icon: Package },
                       { id: 'clientes', label: 'Base Clientes & GPS', icon: Users },
-                      { id: 'consultas', label: 'Cierres & Liquidaciones', icon: BarChart3 },
+                      { id: 'consultas', label: 'Consulta Rutas y Productos', icon: Layers },
                       { id: 'cierre', label: 'Cierre General', icon: RotateCcw }
                     ].map(sub => {
                       const Icon = sub.icon;
@@ -715,7 +728,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CARGUE DESPACHO RUTA (Con productos únicos y listado fijo) */}
+                {/* CARGUE DESPACHO RUTA */}
                 {pcSubTab === 'cargueview' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
@@ -789,7 +802,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* LISTADO DE PRODUCTOS EN DESPACHO (MODO INFORMATIVO Y EDITABLE POR LÍNEA) */}
                       <div className="border-t border-slate-800 pt-3 space-y-3">
                         <div className="flex justify-between items-center">
                           <label className="text-xs font-bold text-amber-300">Productos (Cargadas / Regresadas)</label>
@@ -915,11 +927,11 @@ export default function App() {
                                 <span className="text-[10px] bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded-none font-semibold">{c.rutaNombre}</span>
                               </div>
                               <div className="space-y-1.5 pt-1">
-                                <p className="text-[11px] font-bold text-slate-400">Control de Productos en Vehículo:</p>
+                                <p className="text-[11px] font-bold text-slate-400">Listado de Bebidas Asignadas en Tiempo Real (Solo Lectura):</p>
                                 {c.items.map((it, idx) => (
-                                  <div key={idx} className="flex justify-between text-xs bg-slate-900 p-2 rounded-none">
-                                    <span className="text-slate-200">{it.prodNombre} ({it.presentacion}mL)</span>
-                                    <span className="font-bold text-amber-400">Stock: {it.cantidadActual} / Salida: {it.totalSalida}</span>
+                                  <div key={idx} className="flex justify-between text-xs bg-slate-900 p-2.5 rounded-none border border-slate-800">
+                                    <span className="text-slate-200 font-medium">{it.prodNombre} ({it.presentacion}mL)</span>
+                                    <span className="font-bold text-amber-400">Stock Actual: {it.cantidadActual} / Salida Total: {it.totalSalida}</span>
                                   </div>
                                 ))}
                               </div>
@@ -931,7 +943,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* GASTOS DE RUTA (PURAMENTE INFORMATIVO) */}
+                {/* GASTOS DE RUTA (SOLO INFORMATIVO) */}
                 {pcSubTab === 'gastos' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-4">
@@ -1099,17 +1111,47 @@ export default function App() {
                   </div>
                 )}
 
-                {/* CIERRES & LIQUIDACIONES */}
+                {/* MÓDULO UNIFICADO DE CONSULTA DE RUTAS Y PRODUCTOS ASIGNADOS */}
                 {pcSubTab === 'consultas' && (
-                  <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-5">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 space-y-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
                       <div>
-                        <h3 className="text-md font-bold text-amber-400">Módulo de Cierres, Liquidación y Reportes</h3>
-                        <p className="text-xs text-slate-400">Informes de ventas totales por producto, liquidadas por vendedor.</p>
+                        <h3 className="text-md font-bold text-amber-400">Módulo de Consulta Unificada: Rutas y Productos Asignados</h3>
+                        <p className="text-xs text-slate-400">Visualiza en tiempo real los despachos activos, rutas y su inventario asignado.</p>
                       </div>
                       <button onClick={exportarExcelReporte} className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-none text-xs font-bold flex items-center gap-2">
                         <FileSpreadsheet className="w-4 h-4" /> Exportar a Excel
                       </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300">Despachos y Rutas Activas en Tiempo Real</h4>
+                      {carguesDiarios.length === 0 ? (
+                        <p className="text-xs text-slate-500 py-6 text-center bg-slate-950 rounded border border-slate-800">No hay rutas ni productos despachados activos en este momento.</p>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {carguesDiarios.map(c => (
+                            <div key={c.id} className="bg-slate-950 p-4 rounded-none border border-slate-800 space-y-3">
+                              <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                                <div>
+                                  <span className="font-bold text-amber-300">Ruta: {c.rutaNombre}</span>
+                                  <p className="text-[10px] text-slate-400">Responsable: {c.repartidorNombre} ({c.fecha})</p>
+                                </div>
+                                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-none font-semibold">Activa</span>
+                              </div>
+                              <div className="space-y-1.5 pt-1">
+                                <p className="text-[11px] font-bold text-slate-400">Bebidas y Productos Asignados:</p>
+                                {c.items.map((it, idx) => (
+                                  <div key={idx} className="flex justify-between text-xs bg-slate-900 p-2.5 rounded-none border border-slate-800">
+                                    <span className="text-slate-200 font-medium">{it.prodNombre} ({it.presentacion}mL)</span>
+                                    <span className="font-bold text-amber-400">Cargadas: {it.cantidadCargadas} | Stock Actual: {it.cantidadActual}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {cierresEnviadosMovil.length > 0 && (
@@ -1123,64 +1165,11 @@ export default function App() {
                               <p className="font-bold text-amber-300">Vendedor: {env.vendedorNombre}</p>
                               <p className="text-slate-400">Fecha: {env.fecha}</p>
                               <p className="text-emerald-400 font-bold">Total Reportado: ${env.totalVendido.toLocaleString()} COP</p>
-                              <p className="text-[11px] text-slate-500">{env.ventas.length} transacciones liquidadas</p>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
-                      <div>
-                        <label className="text-[11px] text-slate-400 block mb-1">Filtrar por Municipio</label>
-                        <input type="text" value={filtroMunicipio} onChange={e => setFiltroMunicipio(e.target.value)} placeholder="Sabanagrande" className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-200" />
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-slate-400 block mb-1">Filtrar por Ruta</label>
-                        <input type="text" value={filtroZona} onChange={e => setFiltroZona(e.target.value)} placeholder="Ruta R1" className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-200" />
-                      </div>
-                      <div>
-                        <label className="text-[11px] text-slate-400 block mb-1">Filtrar por Vendedor</label>
-                        <input type="text" value={filtroRepartidor} onChange={e => setFiltroRepartidor(e.target.value)} placeholder="Carlos" className="w-full bg-slate-900 border border-slate-800 rounded p-2 text-xs text-slate-200" />
-                      </div>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs text-slate-300">
-                        <thead className="bg-slate-950 text-slate-400 uppercase">
-                          <tr>
-                            <th className="p-3">Hora</th>
-                            <th className="p-3">Vendedor</th>
-                            <th className="p-3">Establecimiento</th>
-                            <th className="p-3">Municipio</th>
-                            <th className="p-3">Producto</th>
-                            <th className="p-3">Vendidas</th>
-                            <th className="p-3">N. Deuda</th>
-                            <th className="p-3">Cambios</th>
-                            <th className="p-3">Total Venta</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800">
-                          {ventasFiltradas.length === 0 ? (
-                            <tr><td colSpan="9" className="p-6 text-center text-slate-500">No se encontraron registros de ventas.</td></tr>
-                          ) : (
-                            ventasFiltradas.map(v => (
-                              <tr key={v.id}>
-                                <td className="p-3 text-slate-400">{v.hora}</td>
-                                <td className="p-3 font-medium text-amber-300">{v.vendedorNombre}</td>
-                                <td className="p-3">{v.clienteNombre}</td>
-                                <td className="p-3">{v.municipio}</td>
-                                <td className="p-3">{v.prodNombre}</td>
-                                <td className="p-3 font-bold text-white">{v.cantidad}</td>
-                                <td className="p-3 text-red-400">{v.nuevaDeuda}</td>
-                                <td className="p-3 text-sky-400">{v.cambios}</td>
-                                <td className="p-3 font-bold text-emerald-400">${v.total.toLocaleString()} COP</td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
                   </div>
                 )}
 
@@ -1270,7 +1259,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 1. SELECCIONAR MUNICIPIO (Restringido estrictamente a los agregados en la ruta) */}
+                {/* 1. SELECCIONAR MUNICIPIO (Estrictamente los asignados a la ruta) */}
                 <div>
                   <label className="text-xs text-slate-400 mb-1 block">1. Seleccionar Municipio (Asignado a tu Ruta)</label>
                   <select 
@@ -1338,8 +1327,8 @@ export default function App() {
                       <input type="number" min="0" value={cambiosItem} onChange={e => setCambiosItem(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">Muestras</label>
-                      <input type="number" min="0" value={muestrasItem} onChange={e => setMuestrasItem(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded p-2.5 text-sm text-slate-200" />
+                      <label className="text-xs text-slate-400 mb-1 block">Muestras</label>
+                      <input type="number" min="0" value={muestrasItem} onChange={e => setMuestrasItem(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" />
                     </div>
                   </div>
 
